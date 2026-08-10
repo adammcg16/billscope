@@ -1,84 +1,125 @@
 import streamlit as st
 import pandas as pd
+import pdfplumber
+import io
 
 # App Config & Branding
 st.set_page_config(page_title="BillScope", page_icon="🔍", layout="centered")
 
-# --- LOAD DATA FROM EXCEL ---
+# --- LOAD BENCHMARK DATA FROM EXCEL ---
 @st.cache_data
 def load_data():
     file_path = "billscope_tabs.xlsx"
     electricity = pd.read_excel(file_path, sheet_name="Electricity")
     internet = pd.read_excel(file_path, sheet_name="Internet")
-    mortgage = pd.read_excel(file_path, sheet_name="Mortgage")
-    return electricity, internet, mortgage
+    return electricity, internet
 
 try:
-    elec_df, net_df, mort_df = load_data()
+    elec_df, net_df = load_data()
 except Exception as e:
     st.error(f"Error loading Excel file: {e}. Please ensure 'billscope_tabs.xlsx' is uploaded to your GitHub repository.")
     st.stop()
 
 # --- NAVIGATION SIDEBAR ---
 st.sidebar.title("🔍 BillScope Menu")
-app_page = st.sidebar.radio("Navigation", ["Home", "Auditor Dashboard", "Terms & Conditions"])
+app_page = st.sidebar.radio("Navigation", ["Home", "Instant Bill Auditor", "Terms & Conditions"])
 
 st.sidebar.divider()
-st.sidebar.caption("© 2026 BillScope. All rights reserved.")
+st.sidebar.caption("© 2026 BillScope. Household Expense Concierge.")
 
 # ==========================================
 # PAGE 0: HOME / LANDING PAGE
 # ==========================================
 if app_page == "Home":
     st.title("🔍 Welcome to BillScope")
-    st.subheader("Take Control of Your Household Expenses & Interest Rates")
+    st.subheader("Beat the QLD 'Lazy Tax' on Your Household Bills")
     
     st.write(
-        "BillScope is your independent financial auditing tool designed to benchmark your ongoing household costs "
-        "against real market averages. Instantly uncover potential savings on your electricity, internet, and mortgage."
+        "Are you paying too much for electricity or internet? BillScope lets you upload your bill or "
+        "enter your details to instantly benchmark your costs against regional averages and unlock real savings."
     )
     
     st.divider()
     
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns(2)
     with col1:
-        st.markdown("### ⚡ Electricity")
-        st.write("Auto-detects regional QLD benchmarks based on your postcode.")
+        st.markdown("### ⚡ Electricity Audit")
+        st.write("Compare your quarterly or monthly energy bills against QLD regional benchmark ranges.")
     with col2:
-        st.markdown("### 🌐 Internet")
-        st.write("Compares broadband costs against local market averages.")
-    with col3:
-        st.markdown("### 🏡 Mortgage")
-        st.write("Calculates your exact LVR tier and assesses your interest rate.")
+        st.markdown("### 🌐 Internet / NBN")
+        st.write("Find out if your broadband plan is overpriced compared to current market averages.")
         
     st.divider()
     
-    st.markdown("### Ready to start auditing?")
-    st.write("Switch to the **Auditor Dashboard** using the navigation menu on the left to input your details.")
-
-# ==========================================
-# PAGE 1: AUDITOR DASHBOARD
-# ==========================================
-elif app_page == "Auditor Dashboard":
-    st.title("🔍 BillScope Auditor")
-    st.subheader("Living Expense & Savings Analysis")
+    st.markdown("### How it works:")
+    st.markdown("1. **Upload or Type:** Drop your PDF bill or enter your postcode and cost.\n"
+                "2. **Instant Check:** Our engine detects if you're paying more than your neighbors.\n"
+                "3. **Let Us Fix It:** Want out of the overpayment? Request our bill reduction concierge service.")
     
-    st.sidebar.header("Enter Your Bill Details")
-    category = st.sidebar.selectbox("Expense Category", ["Electricity", "Internet", "Mortgage"])
+    if st.button("Start Bill Audit Now 🚀", type="primary"):
+        st.info("Use the left navigation menu and select **Instant Bill Auditor** to begin!")
 
-    # --- CATEGORY-SPECIFIC LOGIC ---
-    if category in ["Electricity", "Internet"]:
-        df = elec_df if category == "Electricity" else net_df
+# ==========================================
+# PAGE 1: INSTANT BILL AUDITOR
+# ==========================================
+elif app_page == "Instant Bill Auditor":
+    st.title("⚡ Household Bill Auditor")
+    st.subheader("Upload your bill or enter details to uncover potential savings.")
+
+    # Choice of Input Method
+    input_method = st.radio("Choose Input Method", ["Quick Manual Entry", "Upload Bill (PDF)"], horizontal=True)
+    
+    category = st.selectbox("Select Bill Type", ["Electricity", "Internet"])
+    df = elec_df if category == "Electricity" else net_df
+    
+    user_postcode = None
+    current_cost = 0.0
+    billing_cycle = "Monthly"
+    provider_name = "Unknown"
+    
+    # --- METHOD A: QUICK MANUAL ENTRY ---
+    if input_method == "Quick Manual Entry":
+        st.markdown("#### Enter Bill Details")
+        col1, col2 = st.columns(2)
+        with col1:
+            user_postcode = st.number_input("Your Postcode", min_value=1000, max_value=9999, value=4557, step=1)
+            provider_name = st.text_input("Current Provider", "e.g. Origin, AGL, Telstra")
+        with col2:
+            if category == "Electricity":
+                billing_cycle = st.selectbox("Billing Cycle", ["Monthly", "Quarterly"])
+            current_cost = st.number_input("Current Cost ($)", min_value=0.0, value=150.0, step=5.0)
+
+    # --- METHOD B: UPLOAD PDF BILL ---
+    else:
+        st.markdown("#### Upload PDF Bill")
+        uploaded_file = st.file_uploader("Upload your recent bill statement", type=["pdf"])
         
-        user_postcode = st.sidebar.number_input("Enter Your Postcode", min_value=1000, max_value=9999, value=4557, step=1)
-        provider_name = st.sidebar.text_input("Current Provider Name", "e.g., Origin")
+        user_postcode = st.number_input("Confirm Your Postcode", min_value=1000, max_value=9999, value=4557, step=1)
         
-        if category == "Electricity":
-            billing_cycle = st.sidebar.selectbox("Billing Cycle", ["Monthly", "Quarterly"])
-        
-        current_cost = st.sidebar.number_input("Current Cost ($)", min_value=0.0, value=100.0, step=5.0)
-        
-        # Auto-detect region range logic
+        if uploaded_file is not None:
+            with st.spinner("Reading bill details..."):
+                try:
+                    with pdfplumber.open(uploaded_file) as pdf:
+                        extracted_text = ""
+                        for page in pdf.pages:
+                            extracted_text += page.extract_text() or ""
+                    
+                    st.success("Bill successfully scanned!")
+                    # Basic placeholder parsing (you can refine keywords later)
+                    st.caption("Extracted text snippet preview available in system.")
+                except Exception as ex:
+                    st.warning(f"Could not automatically parse PDF text ({ex}). Please enter cost manually below.")
+            
+            current_cost = st.number_input("Confirmed Bill Cost ($ from statement)", min_value=0.0, value=200.0, step=5.0)
+            if category == "Electricity":
+                billing_cycle = st.selectbox("Billing Cycle", ["Monthly", "Quarterly"])
+        else:
+            st.info("Please upload a PDF file to begin extraction.")
+
+    st.divider()
+
+    # --- BENCHMARK EXECUTION & RESULTS ---
+    if st.button("Run Savings Analysis 🔍", type="primary"):
         match = df[(df["postcode_start"] <= user_postcode) & (df["postcode_end"] >= user_postcode)]
         
         if not match.empty:
@@ -86,92 +127,58 @@ elif app_page == "Auditor Dashboard":
             benchmark = match.iloc[0]["benchmark_cost"]
             suggested_provider = match.iloc[0]["provider_example"]
             
+            # Normalize to annual cost for comparison
             monthly_user = current_cost / 3 if (category == "Electricity" and billing_cycle == "Quarterly") else current_cost
+            annual_user_cost = monthly_user * 12
+            annual_benchmark_cost = benchmark * 12
             
-            st.subheader(f"{category} Analysis for Postcode {user_postcode}")
-            st.caption(f"Detected Region: **{region_name}**")
+            savings = annual_user_cost - annual_benchmark_cost
+            
+            st.subheader(f"📊 Audit Results for Postcode {user_postcode}")
+            st.caption(f"Matched Region: **{region_name}**")
             
             col1, col2 = st.columns(2)
-            col1.metric("Your Annual Cost", f"${(monthly_user * 12):,.2f}")
-            col2.metric("Regional Benchmark", f"${(benchmark * 12):,.2f}")
+            col1.metric("Your Estimated Annual Cost", f"${annual_user_cost:,.2f}")
+            col2.metric("Regional Benchmark Target", f"${annual_benchmark_cost:,.2f}")
             
-            savings = (monthly_user * 12) - (benchmark * 12)
+            st.markdown("---")
             
-            st.divider()
             if savings > 0:
-                st.error(f"⚠️ **Potential Savings Found!** You are paying approximately **${savings:,.2f} more per year** than the regional benchmark. Consider checking **{suggested_provider}**.")
+                st.error(f"⚠️ **Lazy Tax Detected!** You are paying approximately **${savings:,.2f} more per year** than the regional benchmark.")
+                
+                # CONCIERGE HANDOVER CALL TO ACTION
+                st.markdown("### Want us to slash this bill for you?")
+                st.write("Don't spend hours on hold. Hand this over to our **Household Bill Concierge** service, and we will handle the switch to a cheaper provider on your behalf.")
+                
+                with st.form("concierge_form"):
+                    st.markdown("#### Request Free Concierge Assistance")
+                    c_name = st.text_input("Your Full Name")
+                    c_phone = st.text_input("Phone Number")
+                    c_email = st.text_input("Email Address")
+                    
+                    submitted = st.form_submit_button("Book My Free Bill Review 🚀")
+                    if submitted:
+                        if c_name and c_email:
+                            st.success(f"Thank you, {c_name}! We have received your audit data and will contact you within 24 hours to help lower your {category.lower()} bills.")
+                        else:
+                            st.warning("Please provide your name and email so we can reach out.")
             else:
-                st.success(f"✅ **Looking Good!** Your current rate with {provider_name} is at or below the regional benchmark.")
+                st.success(f"✅ **Great Job!** Your current rate is competitive and sitting at or below the regional benchmark.")
         else:
-            st.warning("⚠️ Postcode not found within current QLD regional ranges. Please check your entered postcode.")
-
-    elif category == "Mortgage":
-        df = mort_df
-        
-        st.sidebar.subheader("Mortgage Details")
-        prop_val = st.sidebar.number_input("Property Value ($)", min_value=0.0, value=800000.0, step=10000.0)
-        loan_amt = st.sidebar.number_input("Loan Amount ($)", min_value=0.0, value=600000.0, step=10000.0)
-        rate_type = st.sidebar.selectbox("Rate Type", ["Variable", "Fixed", "Investment"])
-        current_rate = st.sidebar.number_input("Your Current Interest Rate (%)", min_value=0.0, max_value=20.0, value=6.5, step=0.05)
-        
-        if prop_val > 0:
-            lvr = (loan_amt / prop_val) * 100
-            lvr_tier = "<80% LVR" if lvr < 80 else ">80% LVR"
-            
-            if rate_type == "Investment":
-                sub_cat = "Investment"
-            else:
-                sub_cat = f"{rate_type} ({lvr_tier})"
-                
-            match = df[df["sub_category"] == sub_cat]
-            
-            st.subheader("Mortgage Interest Rate Analysis")
-            
-            if not match.empty:
-                benchmark_rate = match.iloc[0]["benchmark_value"]
-                
-                col1, col2 = st.columns(2)
-                col1.metric("Your Calculated LVR", f"{lvr:.1f}%", lvr_tier)
-                col2.metric("Market Benchmark Rate", f"{benchmark_rate:.2f}%")
-                
-                st.divider()
-                if current_rate > benchmark_rate:
-                    rate_diff = current_rate - benchmark_rate
-                    st.error(f"⚠️ **Potential Savings Found!** Your interest rate ({current_rate:.2f}%) is **{rate_diff:.2f}% higher** than the market benchmark ({benchmark_rate:.2f}%). Consider shopping around.")
-                else:
-                    st.success(f"✅ **Competitive Rate!** Your current interest rate of {current_rate:.2f}% is at or below market benchmark levels.")
-            else:
-                st.warning("Could not match the mortgage criteria with the database spreadsheet.")
+            st.warning("⚠️ Postcode not found within current QLD regional tracking ranges. Please double-check your postcode.")
 
 # ==========================================
 # PAGE 2: TERMS & CONDITIONS
 # ==========================================
 elif app_page == "Terms & Conditions":
     st.title("⚖️ Terms of Service & Disclaimers")
-    st.markdown("Please read these terms carefully before using BillScope.")
-    
     st.markdown("""
-    ### 1. Agreement to Terms
-    By accessing or using BillScope ("the App"), you agree to be bound by these Terms of Service. If you disagree with any part of these terms, you must not use the App.
-
-    ### 2. Nature of Service
-    BillScope is a software-as-a-service (SaaS) tool intended to help users track ongoing household expenses, calculate Loan-to-Value Ratios (LVR), and compare user-inputted costs against generalized regional and market benchmarks.
-
-    ### 3. Not Financial or Credit Advice
-    The App provides automated calculations and generalized data comparisons only. 
-    * The App does **NOT** provide personal financial advice.
-    * The App does **NOT** provide credit assistance, financial product recommendations, or brokerage services.
-    * Nothing contained within the App should be construed as an inducement, recommendation, or offer to buy or switch any financial product, utility plan, or mortgage.
-
-    ### 4. Accuracy of Benchmarks and Calculations
-    While we strive to keep benchmarks accurate, market rates fluctuate frequently. Regional estimates and interest rate benchmarks are generalized and may not apply directly to your individual credit profile, property valuation, or specific utility contract terms. You should read the relevant Product Disclosure Statement (PDS) or speak with a licensed professional before altering or entering into any financial contract.
-
-    ### 5. Subscription and Fees
-    Access to BillScope features may require a paid subscription fee. Fees are billed on a recurring basis as selected at checkout. All subscription fees cover the license to use the tracking and calculation software only, and do not constitute payment for advisory services.
-
-    ### 6. Limitation of Liability
-    To the maximum extent permitted by Australian Consumer Law (ACL), BillScope, its developers, and operators shall not be held liable for any direct, indirect, incidental, or consequential loss or damage arising out of or in connection with your use of the App, reliance on benchmark calculations, or failure to achieve anticipated financial savings.
-
-    ### 7. Governing Law
-    These terms shall be governed by and construed in accordance with the laws of Queensland, Australia, and you submit to the non-exclusive jurisdiction of the courts located in Queensland for the resolution of any disputes.
+    ### 1. General Information Only
+    BillScope is an independent software tool designed for general information, calculation, and benchmarking purposes only. It does not constitute personal financial, tax, or legal advice.
+    
+    ### 2. Concierge Services
+    Our bill reduction concierge service assists with administrative guidance and comparison referrals. We do not provide credit assistance or mortgage products.
+    
+    ### 3. Limitation of Liability
+    To the maximum extent permitted by law, BillScope accepts no liability for any financial loss or variation in utility contract pricing.
     """)

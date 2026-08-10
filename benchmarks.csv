@@ -1,0 +1,10 @@
+postcode,category,benchmark_cost,provider_example
+4557,Electricity,350.0,Origin Energy
+4557,Internet,85.0,Aussie Broadband
+4557,Phone,55.0,Telstra
+2000,Electricity,400.0,EnergyAustralia
+2000,Internet,90.0,Superloop
+2000,Phone,60.0,Optus
+3000,Electricity,380.0,AGL
+3000,Internet,85.0,TPG
+3000,Phone,55.0,Vodafone

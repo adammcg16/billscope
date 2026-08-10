@@ -21,18 +21,48 @@ except Exception as e:
 
 # --- NAVIGATION SIDEBAR ---
 st.sidebar.title("🔍 BillScope Menu")
-app_page = st.sidebar.radio("Go to", ["Auditor Dashboard", "Terms & Conditions"])
+app_page = st.sidebar.radio("Navigation", ["Home", "Auditor Dashboard", "Terms & Conditions"])
 
 st.sidebar.divider()
+st.sidebar.caption("© 2026 BillScope. All rights reserved.")
+
+# ==========================================
+# PAGE 0: HOME / LANDING PAGE
+# ==========================================
+if app_page == "Home":
+    st.title("🔍 Welcome to BillScope")
+    st.subheader("Take Control of Your Household Expenses & Interest Rates")
+    
+    st.write(
+        "BillScope is your independent financial auditing tool designed to benchmark your ongoing household costs "
+        "against real market averages. Instantly uncover potential savings on your electricity, internet, and mortgage."
+    )
+    
+    st.divider()
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown("### ⚡ Electricity")
+        st.write("Auto-detects regional QLD benchmarks based on your postcode.")
+    with col2:
+        st.markdown("### 🌐 Internet")
+        st.write("Compares broadband costs against local market averages.")
+    with col3:
+        st.markdown("### 🏡 Mortgage")
+        st.write("Calculates your exact LVR tier and assesses your interest rate.")
+        
+    st.divider()
+    
+    st.markdown("### Ready to start auditing?")
+    st.write("Switch to the **Auditor Dashboard** using the navigation menu on the left to input your details.")
 
 # ==========================================
 # PAGE 1: AUDITOR DASHBOARD
 # ==========================================
-if app_page == "Auditor Dashboard":
-    st.title("🔍 BillScope")
-    st.subheader("Living Expense & Savings Auditor")
-    st.write("Track your household bills, factor in your postcode ranges, and identify potential savings.")
-
+elif app_page == "Auditor Dashboard":
+    st.title("🔍 BillScope Auditor")
+    st.subheader("Living Expense & Savings Analysis")
+    
     st.sidebar.header("Enter Your Bill Details")
     category = st.sidebar.selectbox("Expense Category", ["Electricity", "Internet", "Mortgage"])
 

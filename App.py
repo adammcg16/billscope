@@ -6,93 +6,98 @@ st.set_page_config(page_title="BillScope", page_icon="🔍", layout="centered")
 
 st.title("🔍 BillScope")
 st.subheader("Living Expense & Savings Auditor")
-st.write("Track your ongoing household bills, factor in your postcode, and instantly identify potential savings against regional benchmarks.")
+st.write("Track your household bills, factor in your postcode, and identify potential savings.")
 
-# --- LOAD BENCHMARKS FROM CSV ---
+# --- LOAD DATA FROM EXCEL ---
 @st.cache_data
-def load_benchmarks():
-    # Reads the CSV file you created in the repository
-    return pd.read_csv("benchmarks.csv")
+def load_data():
+    # Ensure billscope_tabs.xlsx is in your GitHub repo
+    file_path = "billscope_tabs.xlsx"
+    electricity = pd.read_excel(file_path, sheet_name="Electricity")
+    internet = pd.read_excel(file_path, sheet_name="Internet")
+    mortgage = pd.read_excel(file_path, sheet_name="Mortgage")
+    return electricity, internet, mortgage
 
-df_benchmarks = load_benchmarks()
+try:
+    elec_df, net_df, mort_df = load_data()
+except Exception as e:
+    st.error(f"Error loading Excel file: {e}. Please ensure 'billscope_tabs.xlsx' is uploaded.")
+    st.stop()
 
 # --- SIDEBAR: USER INPUT FORM ---
 st.sidebar.header("Enter Your Bill Details")
-
-# Pull unique postcodes dynamically from the CSV file
-available_postcodes = df_benchmarks["postcode"].astype(str).unique().tolist()
-user_postcode = st.sidebar.selectbox("Your Postcode", available_postcodes)
-
-# Filter categories available for that specific postcode
-filtered_categories = df_benchmarks[df_benchmarks["postcode"].astype(str) == user_postcode]["category"].tolist()
-category = st.sidebar.selectbox("Expense Category", filtered_categories)
-
-provider_name = st.sidebar.text_input("Current Provider Name", "e.g., Origin or Telstra")
-billing_cycle = st.sidebar.selectbox("Billing Cycle", ["Monthly", "Quarterly"])
-current_cost = st.sidebar.number_input("Current Cost ($)", min_value=0.0, value=100.0, step=5.0)
-
-# Normalize cost to a monthly figure for comparison
-if billing_cycle == "Quarterly":
-    monthly_user_cost = current_cost / 3.0
-else:
-    monthly_user_cost = current_cost
-
-# --- MAIN DASHBOARD COMPARISON LOGIC ---
-st.divider()
-st.subheader(f"Analysis for Postcode: {user_postcode}")
-
-# Lookup benchmark cost from the CSV data frame
-match = df_benchmarks[(df_benchmarks["postcode"].astype(str) == user_postcode) & (df_benchmarks["category"] == category)]
-
-if not match.empty:
-    benchmark_monthly = float(match["benchmark_cost"].values[0])
-    suggested_provider = match["provider_example"].values[0]
-    
-    # Calculate annual figures
-    user_annual = monthly_user_cost * 12
-    benchmark_annual = benchmark_monthly * 12
-    
-    # Display Metrics Side-by-Side
-    col1, col2 = st.columns(2)
-    col1.metric("Your Estimated Annual Cost", f"${user_annual:,.2f}")
-    col2.metric(f"Local Benchmark ({category})", f"${benchmark_annual:,.2f}")
-    
-    # Savings Calculation
-    annual_savings = user_annual - benchmark_annual
-    
-    st.write("")
-    if annual_savings > 0:
-        st.error(f"⚠️ **Potential Savings Found!** You are paying approximately **${annual_savings:,.2f} more per year** than the average local rate. Consider checking providers like **{suggested_provider}**.")
-    else:
-        st.success(f"✅ **Looking Good!** Your current rate with {provider_name} is at or below the regional benchmark.")
-
-else:
-    st.info("No benchmark data found for this selection.")
-    # --- IN YOUR SIDEBAR INPUTS ---
 category = st.sidebar.selectbox("Expense Category", ["Electricity", "Internet", "Mortgage"])
 
-# Conditional inputs depending on the category selected
-if category == "Mortgage":
-    st.sidebar.subheader("Mortgage Details")
-    property_value = st.sidebar.number_input("Property Value ($)", min_value=0.0, value=800000.0, step=10000.0)
-    loan_amount = st.sidebar.number_input("Loan Amount ($)", min_value=0.0, value=600000.0, step=10000.0)
-    rate_type = st.sidebar.selectbox("Rate Type", ["Variable", "Fixed", "Investment"])
-    
-    # Calculate LVR
-    if property_value > 0:
-        lvr_percent = (loan_amount / property_value) * 100
-        lvr_tier = "<80% LVR" if lvr_percent < 80 else ">80% LVR"
-    else:
-        lvr_percent = 0.0
-        lvr_tier = "<80% LVR"
-        
-    # Build a sub-category lookup string to match your CSV
-    if rate_type == "Investment":
-        sub_category = "Investment"
-    else:
-        sub_category = f"{rate_type} ({lvr_tier})"
-else:
-    # Standard inputs for utilities
+# --- CATEGORY-SPECIFIC LOGIC ---
+if category == "Electricity":
+    df = elec_df
+    postcode = st.sidebar.selectbox("Your Postcode", df["postcode"].astype(str).unique())
     provider_name = st.sidebar.text_input("Current Provider Name", "e.g., Origin")
     billing_cycle = st.sidebar.selectbox("Billing Cycle", ["Monthly", "Quarterly"])
-    current_cost = st.sidebar.number_input("Current Cost ($)", min_value=0.0, value=100.0, step=5.0)
+    current_cost = st.sidebar.number_input("Current Cost ($)", min_value=0.0, value=100.0)
+    
+    match = df[(df["postcode"].astype(str) == postcode)]
+    
+    if not match.empty:
+        benchmark = match.iloc[0]["benchmark_cost"]
+        monthly_user = current_cost / 3 if billing_cycle == "Quarterly" else current_cost
+        
+        st.subheader(f"Electricity Analysis (Postcode {postcode})")
+        col1, col2 = st.columns(2)
+        col1.metric("Your Annual Cost", f"${(monthly_user * 12):,.2f}")
+        col2.metric("Local Benchmark", f"${(benchmark * 12):,.2f}")
+        
+        savings = (monthly_user * 12) - (benchmark * 12)
+        if savings > 0:
+            st.error(f"⚠️ Potential savings of ${savings:,.2f} per year.")
+        else:
+            st.success("✅ Your rate is competitive.")
+
+elif category == "Internet":
+    df = net_df
+    postcode = st.sidebar.selectbox("Your Postcode", df["postcode"].astype(str).unique())
+    provider_name = st.sidebar.text_input("Current Provider Name", "e.g., Aussie Broadband")
+    current_cost = st.sidebar.number_input("Monthly Cost ($)", min_value=0.0, value=80.0)
+    
+    match = df[(df["postcode"].astype(str) == postcode)]
+    
+    if not match.empty:
+        benchmark = match.iloc[0]["benchmark_cost"]
+        st.subheader(f"Internet Analysis (Postcode {postcode})")
+        col1, col2 = st.columns(2)
+        col1.metric("Your Annual Cost", f"${(current_cost * 12):,.2f}")
+        col2.metric("Local Benchmark", f"${(benchmark * 12):,.2f}")
+        
+        savings = (current_cost * 12) - (benchmark * 12)
+        if savings > 0:
+            st.error(f"⚠️ Potential savings of ${savings:,.2f} per year.")
+        else:
+            st.success("✅ Your rate is competitive.")
+
+elif category == "Mortgage":
+    df = mort_df
+    prop_val = st.sidebar.number_input("Property Value ($)", min_value=0.0, value=800000.0)
+    loan_amt = st.sidebar.number_input("Loan Amount ($)", min_value=0.0, value=600000.0)
+    rate_type = st.sidebar.selectbox("Rate Type", ["Variable", "Fixed", "Investment"])
+    current_rate = st.sidebar.number_input("Your Current Interest Rate (%)", min_value=0.0, value=6.5)
+    
+    if prop_val > 0:
+        lvr = (loan_amt / prop_val) * 100
+        lvr_tier = "<80% LVR" if lvr < 80 else ">80% LVR"
+        
+        if rate_type == "Investment":
+            sub_cat = "Investment"
+        else:
+            sub_cat = f"{rate_type} ({lvr_tier})"
+            
+        match = df[df["sub_category"] == sub_cat]
+        
+        if not match.empty:
+            benchmark_rate = match.iloc[0]["benchmark_value"]
+            st.subheader("Mortgage Analysis")
+            st.write(f"Your LVR: {lvr:.1f}% ({lvr_tier})")
+            
+            if current_rate > benchmark_rate:
+                st.error(f"⚠️ Your rate ({current_rate}%) is higher than the benchmark ({benchmark_rate}%).")
+            else:
+                st.success(f"✅ Your rate ({current_rate}%) is competitive (Benchmark: {benchmark_rate}%).")

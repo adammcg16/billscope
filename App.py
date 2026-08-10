@@ -8,18 +8,25 @@ st.title("🔍 BillScope")
 st.subheader("Living Expense & Savings Auditor")
 st.write("Track your ongoing household bills, factor in your postcode, and instantly identify potential savings against regional benchmarks.")
 
-# --- MOCK REGIONAL BENCHMARK DATABASE ---
-benchmark_data = {
-    "4557": {"Electricity": 350.0, "Internet": 85.0, "Phone": 55.0},
-    "2000": {"Electricity": 400.0, "Internet": 90.0, "Phone": 60.0},
-    "3000": {"Electricity": 380.0, "Internet": 85.0, "Phone": 55.0}
-}
+# --- LOAD BENCHMARKS FROM CSV ---
+@st.cache_data
+def load_benchmarks():
+    # Reads the CSV file you created in the repository
+    return pd.read_csv("benchmarks.csv")
+
+df_benchmarks = load_benchmarks()
 
 # --- SIDEBAR: USER INPUT FORM ---
 st.sidebar.header("Enter Your Bill Details")
 
-user_postcode = st.sidebar.selectbox("Your Postcode", ["4557", "2000", "3000"])
-category = st.sidebar.selectbox("Expense Category", ["Electricity", "Internet", "Phone"])
+# Pull unique postcodes dynamically from the CSV file
+available_postcodes = df_benchmarks["postcode"].astype(str).unique().tolist()
+user_postcode = st.sidebar.selectbox("Your Postcode", available_postcodes)
+
+# Filter categories available for that specific postcode
+filtered_categories = df_benchmarks[df_benchmarks["postcode"].astype(str) == user_postcode]["category"].tolist()
+category = st.sidebar.selectbox("Expense Category", filtered_categories)
+
 provider_name = st.sidebar.text_input("Current Provider Name", "e.g., Origin or Telstra")
 billing_cycle = st.sidebar.selectbox("Billing Cycle", ["Monthly", "Quarterly"])
 current_cost = st.sidebar.number_input("Current Cost ($)", min_value=0.0, value=100.0, step=5.0)
@@ -34,8 +41,12 @@ else:
 st.divider()
 st.subheader(f"Analysis for Postcode: {user_postcode}")
 
-if user_postcode in benchmark_data and category in benchmark_data[user_postcode]:
-    benchmark_monthly = benchmark_data[user_postcode][category]
+# Lookup benchmark cost from the CSV data frame
+match = df_benchmarks[(df_benchmarks["postcode"].astype(str) == user_postcode) & (df_benchmarks["category"] == category)]
+
+if not match.empty:
+    benchmark_monthly = float(match["benchmark_cost"].values[0])
+    suggested_provider = match["provider_example"].values[0]
     
     # Calculate annual figures
     user_annual = monthly_user_cost * 12
@@ -51,10 +62,9 @@ if user_postcode in benchmark_data and category in benchmark_data[user_postcode]
     
     st.write("")
     if annual_savings > 0:
-        st.error(f"⚠️ **Potential Savings Found!** You are paying approximately **${annual_savings:,.2f} more per year** than the average local rate for {category} with {provider_name}.")
+        st.error(f"⚠️ **Potential Savings Found!** You are paying approximately **${annual_savings:,.2f} more per year** than the average local rate. Consider checking providers like **{suggested_provider}**.")
     else:
         st.success(f"✅ **Looking Good!** Your current rate with {provider_name} is at or below the regional benchmark.")
 
 else:
-    st.info("Select a category and postcode to view local benchmark comparisons.")
-
+    st.info("No benchmark data found for this selection.")

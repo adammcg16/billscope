@@ -68,3 +68,31 @@ if not match.empty:
 
 else:
     st.info("No benchmark data found for this selection.")
+    # --- IN YOUR SIDEBAR INPUTS ---
+category = st.sidebar.selectbox("Expense Category", ["Electricity", "Internet", "Mortgage"])
+
+# Conditional inputs depending on the category selected
+if category == "Mortgage":
+    st.sidebar.subheader("Mortgage Details")
+    property_value = st.sidebar.number_input("Property Value ($)", min_value=0.0, value=800000.0, step=10000.0)
+    loan_amount = st.sidebar.number_input("Loan Amount ($)", min_value=0.0, value=600000.0, step=10000.0)
+    rate_type = st.sidebar.selectbox("Rate Type", ["Variable", "Fixed", "Investment"])
+    
+    # Calculate LVR
+    if property_value > 0:
+        lvr_percent = (loan_amount / property_value) * 100
+        lvr_tier = "<80% LVR" if lvr_percent < 80 else ">80% LVR"
+    else:
+        lvr_percent = 0.0
+        lvr_tier = "<80% LVR"
+        
+    # Build a sub-category lookup string to match your CSV
+    if rate_type == "Investment":
+        sub_category = "Investment"
+    else:
+        sub_category = f"{rate_type} ({lvr_tier})"
+else:
+    # Standard inputs for utilities
+    provider_name = st.sidebar.text_input("Current Provider Name", "e.g., Origin")
+    billing_cycle = st.sidebar.selectbox("Billing Cycle", ["Monthly", "Quarterly"])
+    current_cost = st.sidebar.number_input("Current Cost ($)", min_value=0.0, value=100.0, step=5.0)

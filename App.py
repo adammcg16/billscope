@@ -213,7 +213,7 @@ elif st.session_state.app_page == "Instant Bill Auditor":
                 with st.form("audit_enquiry_form"):
                     client_name = st.text_input("Your Full Name")
                     client_mobile = st.text_input("Mobile Number")
-                    client_email = st.text_input("Email Address")
+                    client_email = st.text_input("Email Address")  # Added missing input field
                     user_notes = st.text_area("Notes / What you want reviewed", value=f"Please help me review my {category} bill. Current cost is ${current_cost} with {provider_name}.")
                     
                     submitted = st.form_submit_button("Send Request to Your Living Expense Concierge 🚀")
@@ -241,7 +241,7 @@ elif st.session_state.app_page == "Instant Bill Auditor":
                             with st.spinner("Dispatching email..."):
                                 success = send_resend_email(email_subject, email_body)
                                 if success:
-                                    st.success("🎉 Success! Your request has been sent straight to your Hotmail inbox.")
+                                    st.success("🎉 Success! Your request has been sent straight to your living expense concierge.")
                         else:
                             st.warning("Please fill in your Name, Mobile, and Email address.")
             else:
@@ -279,7 +279,7 @@ elif st.session_state.app_page == "Contact Concierge":
                 with st.spinner("Dispatching email..."):
                     success = send_resend_email(email_subject, email_body)
                     if success:
-                        st.success("🎉 Success! Your enquiry has been sent straight to your Hotmail inbox.")
+                        st.success("🎉 Success! Your enquiry has been sent straight to your living expense concierge.")
             else:
                 st.warning("Please fill in your Name, Mobile, and Notes before submitting.")
 

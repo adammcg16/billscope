@@ -74,7 +74,6 @@ if st.session_state.app_page == "Home":
                 "2. **Instant Check:** Our engine detects if you're paying more than your neighbors.\n"
                 "3. **Let Us Fix It:** Click to connect directly with your Living Expense Concierge.")
     
-    # When clicked, update session state and rerun to jump to the Auditor page immediately
     if st.button("Start Bill Audit Now 🚀", type="primary"):
         st.session_state.app_page = "Instant Bill Auditor"
         st.rerun()
@@ -97,17 +96,41 @@ elif st.session_state.app_page == "Instant Bill Auditor":
     billing_cycle = "Monthly"
     provider_name = "Unknown"
     
+    # Standard Australian Internet Providers List
+    internet_providers = [
+        "Telstra",
+        "Optus",
+        "TPG",
+        "Aussie Broadband",
+        "Superloop",
+        "Vodafone",
+        "Dodo",
+        "iPrimus",
+        "Exetel",
+        "Leaptel",
+        "AGL Energy",
+        "Other"
+    ]
+    
     # --- METHOD A: QUICK MANUAL ENTRY ---
     if input_method == "Quick Manual Entry":
         st.markdown("#### Enter Bill Details")
         col1, col2 = st.columns(2)
         with col1:
             user_postcode = st.number_input("Your Postcode", min_value=1000, max_value=9999, value=4557, step=1)
-            provider_name = st.text_input("Current Provider", "e.g. Origin, AGL, Telstra")
+            
+            if category == "Internet":
+                provider_name = st.selectbox("Current Internet Provider", internet_providers)
+            else:
+                provider_name = st.text_input("Current Provider", "e.g. Origin, AGL")
+                
         with col2:
             if category == "Electricity":
                 billing_cycle = st.selectbox("Billing Cycle", ["Monthly", "Quarterly"])
-            current_cost = st.number_input("Current Cost ($)", min_value=0.0, value=150.0, step=5.0)
+                current_cost = st.number_input("Current Cost ($)", min_value=0.0, value=150.0, step=5.0)
+            else:
+                billing_cycle = "Monthly"  # Force monthly for internet
+                current_cost = st.number_input("Current Cost per Month ($)", min_value=0.0, value=85.0, step=5.0)
 
     # --- METHOD B: UPLOAD PDF BILL ---
     else:
@@ -115,6 +138,9 @@ elif st.session_state.app_page == "Instant Bill Auditor":
         uploaded_file = st.file_uploader("Upload your recent bill statement", type=["pdf"])
         
         user_postcode = st.number_input("Confirm Your Postcode", min_value=1000, max_value=9999, value=4557, step=1)
+        
+        if category == "Internet":
+            provider_name = st.selectbox("Confirm Internet Provider", internet_providers)
         
         if uploaded_file is not None:
             with st.spinner("Reading bill details..."):
@@ -127,9 +153,11 @@ elif st.session_state.app_page == "Instant Bill Auditor":
                 except Exception as ex:
                     st.warning(f"Could not automatically parse PDF text ({ex}). Please enter cost manually below.")
             
-            current_cost = st.number_input("Confirmed Bill Cost ($ from statement)", min_value=0.0, value=200.0, step=5.0)
             if category == "Electricity":
                 billing_cycle = st.selectbox("Billing Cycle", ["Monthly", "Quarterly"])
+                current_cost = st.number_input("Confirmed Bill Cost ($ from statement)", min_value=0.0, value=200.0, step=5.0)
+            else:
+                current_cost = st.number_input("Confirmed Cost per Month ($ from statement)", min_value=0.0, value=85.0, step=5.0)
         else:
             st.info("Please upload a PDF file to begin extraction.")
 
@@ -145,14 +173,18 @@ elif st.session_state.app_page == "Instant Bill Auditor":
             suggested_provider = match.iloc[0]["provider_example"]
             
             # Normalize to annual cost
-            monthly_user = current_cost / 3 if (category == "Electricity" and billing_cycle == "Quarterly") else current_cost
+            if category == "Electricity":
+                monthly_user = current_cost / 3 if billing_cycle == "Quarterly" else current_cost
+            else:
+                monthly_user = current_cost  # Internet is always monthly now
+                
             annual_user_cost = monthly_user * 12
             annual_benchmark_cost = benchmark * 12
             
             savings = annual_user_cost - annual_benchmark_cost
             
             st.subheader(f"📊 Audit Results for Postcode {user_postcode}")
-            st.caption(f"Matched Region: **{region_name}**")
+            st.caption(f"Matched Region: **{region_name}** | Provider: **{provider_name}**")
             
             col1, col2 = st.columns(2)
             col1.metric("Your Estimated Annual Cost", f"${annual_user_cost:,.2f}")
@@ -170,9 +202,10 @@ elif st.session_state.app_page == "Instant Bill Auditor":
                 email_subject = urllib.parse.quote(f"Bill Audit Assistance Request - Postcode {user_postcode}")
                 email_body = urllib.parse.quote(
                     f"Hi Adam,\n\nI ran my {category} bill through BillScope and found potential savings!\n\n"
+                    f"- Bill Type: {category}\n"
                     f"- Postcode: {user_postcode}\n"
-                    f"- Current Provider: {provider_name}\n"
-                    f"- Current Cost: ${current_cost} ({billing_cycle})\n"
+                    f"- Provider: {provider_name}\n"
+                    f"- Current Cost: ${current_cost} per month\n"
                     f"- Estimated Annual Overspend: ~${savings:,.2f}/yr\n\n"
                     f"Please help me look into cheaper alternatives."
                 )
@@ -190,7 +223,7 @@ elif st.session_state.app_page == "Instant Bill Auditor":
 # ==========================================
 # PAGE 2: CONTACT CONCIERGE (CUSTOM NOTE FORM)
 # ==========================================
-elif st.session_state.app_page == "Contact Concierge":
+elif app_page == "Contact Concierge":
     st.title("💬 Living Expense Concierge")
     st.subheader("Have custom bills or multiple items you want reviewed? Send a note directly.")
     
@@ -218,7 +251,7 @@ elif st.session_state.app_page == "Contact Concierge":
                 )
                 custom_mailto = f"mailto:{CONCIERGE_EMAIL}?subject={subject}&body={body}"
                 
-                st.success("Ready! Click the button below to launch your email client and send your request:")
+                st.success("Ready! Click the data button below to launch your email client and send your request:")
                 st.markdown(
                     f'<a href="{custom_mailto}" target="_self"><button style="background-color:#0083B8; color:white; padding:10px 20px; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">📬 Open Email Client & Send</button></a>',
                     unsafe_allow_html=True
@@ -229,7 +262,7 @@ elif st.session_state.app_page == "Contact Concierge":
 # ==========================================
 # PAGE 3: TERMS & CONDITIONS
 # ==========================================
-elif st.session_state.app_page == "Terms & Conditions":
+elif app_page == "Terms & Conditions":
     st.title("⚖️ Terms of Service & Disclaimers")
     st.markdown("""
     ### 1. General Information Only

@@ -192,7 +192,7 @@ elif st.session_state.app_page == "Instant Bill Auditor":
                 st.error(f"⚠️ **Lazy Tax Detected!** You are paying approximately **${savings:,.2f} more per year** than the regional benchmark.")
                 
                 st.markdown("### Want us to slash this bill for you?")
-                st.write("Fill out your details below to send your audit request straight to Adam's inbox.")
+                st.write("Fill out your details below to send your audit request straight to your living expense concierge.")
                 
                 # --- AUTOMATED BACKEND FORM ---
                 with st.form("audit_enquiry_form"):
@@ -201,7 +201,7 @@ elif st.session_state.app_page == "Instant Bill Auditor":
                     client_email = st.text_input("Email Address")
                     user_notes = st.text_area("Notes / What you want reviewed", value=f"Please help me review my {category} bill. Current cost is ${current_cost} with {provider_name}.")
                     
-                    submitted = st.form_submit_button("Send Request to Adam 🚀")
+                    submitted = st.form_submit_button("Send Request to Your Living Expense Concierge 🚀")
                     
                     if submitted:
                         if client_name and client_mobile and client_email:
@@ -222,13 +222,13 @@ elif st.session_state.app_page == "Instant Bill Auditor":
                             try:
                                 response = requests.post(FORMSPREE_URL, data=payload)
                                 if response.status_code == 200:
-                                    st.success("🎉 Success! Your request has been emailed directly to Adam. He will be in touch shortly.")
+                                    st.success("🎉 Success! Your request has been emailed directly to your living expense concierge. We will be in touch shortly.")
                                 else:
                                     st.error("⚠️ Error sending request. Please check your Formspree configuration URL.")
                             except Exception as ex:
                                 st.error(f"Connection error: {ex}")
                         else:
-                            st.warning("Please fill in your Name, Mobile, and Email address so Adam can contact you.")
+                            st.warning("Please fill in your Name, Mobile, and Email address so we can contact you.")
             else:
                 st.success(f"✅ **Great Job!** Your current rate is competitive and sitting at or below the regional benchmark.")
         else:
@@ -264,7 +264,7 @@ elif app_page == "Contact Concierge":
                 try:
                     response = requests.post(FORMSPREE_URL, data=payload)
                     if response.status_code == 200:
-                        st.success("🎉 Success! Your enquiry has been sent straight to Adam's inbox.")
+                        st.success("🎉 Success! Your enquiry has been sent straight to your living expense concierge.")
                     else:
                         st.error("⚠️ Error sending request. Please check your Formspree configuration URL.")
                 except Exception as ex:

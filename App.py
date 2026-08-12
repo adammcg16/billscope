@@ -8,10 +8,10 @@ st.set_page_config(page_title="BillScope", page_icon="🔍", layout="centered")
 
 # --- RESEND API CONFIGURATION (Using Streamlit Secrets) ---
 resend.api_key = st.secrets["resend_api_key"]
-RECEIVER_EMAIL = "billscope.enquiries@gmail.com"
+RECEIVER_EMAIL = "adammcg_16@hotmail.com"
 
 def send_resend_email(subject, body):
-    """Sends an email notification directly via Resend API to your Gmail inbox."""
+    """Sends an email notification directly via Resend API to your verified inbox."""
     try:
         params = {
             "from": "BillScope <onboarding@resend.dev>", # Use onboarding@resend.dev for testing without domain verification
@@ -241,7 +241,7 @@ elif st.session_state.app_page == "Instant Bill Auditor":
                             with st.spinner("Dispatching email..."):
                                 success = send_resend_email(email_subject, email_body)
                                 if success:
-                                    st.success("🎉 Success! Your request has been sent straight to your Gmail inbox.")
+                                    st.success("🎉 Success! Your request has been sent straight to your Hotmail inbox.")
                         else:
                             st.warning("Please fill in your Name, Mobile, and Email address.")
             else:
@@ -279,7 +279,7 @@ elif st.session_state.app_page == "Contact Concierge":
                 with st.spinner("Dispatching email..."):
                     success = send_resend_email(email_subject, email_body)
                     if success:
-                        st.success("🎉 Success! Your enquiry has been sent straight to your Gmail inbox.")
+                        st.success("🎉 Success! Your enquiry has been sent straight to your Hotmail inbox.")
             else:
                 st.warning("Please fill in your Name, Mobile, and Notes before submitting.")
 

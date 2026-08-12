@@ -44,26 +44,26 @@ except Exception as e:
 if "app_page" not in st.session_state:
     st.session_state.app_page = "Home"
 
-# --- CUSTOM CSS FOR LIGHT MODE & MATCHED LOGO THEME ---
+# --- CUSTOM CSS FOR MATCHING LOGO BACKGROUND COLOUR ---
 st.markdown("""
     <style>
-    /* Main App Light Background */
+    /* Main App Background matched to logo's soft grey tone */
     .stApp {
-        background-color: #FFFFFF;
+        background-color: #F1F3F4;
         color: #1F2937;
     }
     
     /* Clean Sidebar Styling */
     [data-testid="stSidebar"] {
-        background-color: #F8FAFC !important;
-        border-right: 1px solid #E2E8F0;
+        background-color: #E8ECEE !important;
+        border-right: 1px solid #D1D5DB;
     }
     [data-testid="stSidebar"] .stRadio label p {
         color: #1F2937 !important;
         font-weight: 500;
     }
     [data-testid="stSidebar"] span, [data-testid="stSidebar"] div, [data-testid="stSidebar"] caption {
-        color: #475569 !important;
+        color: #4B5563 !important;
     }
 
     h1, h2, h3 {
@@ -74,15 +74,15 @@ st.markdown("""
     }
     .hero-container {
         padding: 2rem 1rem;
-        background: linear-gradient(135deg, #F0Fdf4 0%, #EFF6FF 100%);
-        border: 1px solid #E2E8F0;
+        background: linear-gradient(135deg, #E2E8F0 0%, #F1F3F4 100%);
+        border: 1px solid #D1D5DB;
         border-radius: 16px;
         text-align: center;
         margin-bottom: 2rem;
     }
     .feature-card {
-        background-color: #F8FAFC;
-        border: 1px solid #E2E8F0;
+        background-color: #FFFFFF;
+        border: 1px solid #D1D5DB;
         padding: 1.5rem;
         border-radius: 12px;
         text-align: center;
@@ -91,7 +91,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- LOGO HELPER FOR LIGHT MODE ---
+# --- LOGO HELPER ---
 def render_top_logo():
     try:
         with open("logo.png", "rb") as image_file:

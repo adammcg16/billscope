@@ -95,21 +95,17 @@ elif st.session_state.app_page == "Instant Bill Auditor":
     current_cost = 150.0
     billing_cycle = "Monthly"
     provider_name = "Unknown"
+    nbn_tier = "NBN 50"  # Default tier
     
-    # Standard Australian Internet Providers List
+    # Standard Options
     internet_providers = [
-        "Telstra",
-        "Optus",
-        "TPG",
-        "Aussie Broadband",
-        "Superloop",
-        "Vodafone",
-        "Dodo",
-        "iPrimus",
-        "Exetel",
-        "Leaptel",
-        "AGL Energy",
-        "Other"
+        "Telstra", "Optus", "TPG", "Aussie Broadband", "Superloop", 
+        "Vodafone", "Dodo", "iPrimus", "Exetel", "Leaptel", "AGL Energy", "Other"
+    ]
+    
+    nbn_tiers = [
+        "NBN 12", "NBN 25", "NBN 50", "NBN 100", 
+        "NBN 250", "NBN 500", "NBN 1000", "NBN 2000"
     ]
     
     # --- METHOD A: QUICK MANUAL ENTRY ---
@@ -121,6 +117,7 @@ elif st.session_state.app_page == "Instant Bill Auditor":
             
             if category == "Internet":
                 provider_name = st.selectbox("Current Internet Provider", internet_providers)
+                nbn_tier = st.selectbox("NBN Speed Tier", nbn_tiers)
             else:
                 provider_name = st.text_input("Current Provider", "e.g. Origin, AGL")
                 
@@ -141,6 +138,7 @@ elif st.session_state.app_page == "Instant Bill Auditor":
         
         if category == "Internet":
             provider_name = st.selectbox("Confirm Internet Provider", internet_providers)
+            nbn_tier = st.selectbox("Confirm NBN Speed Tier", nbn_tiers)
         
         if uploaded_file is not None:
             with st.spinner("Reading bill details..."):
@@ -176,7 +174,7 @@ elif st.session_state.app_page == "Instant Bill Auditor":
             if category == "Electricity":
                 monthly_user = current_cost / 3 if billing_cycle == "Quarterly" else current_cost
             else:
-                monthly_user = current_cost  # Internet is always monthly now
+                monthly_user = current_cost  # Internet is monthly
                 
             annual_user_cost = monthly_user * 12
             annual_benchmark_cost = benchmark * 12
@@ -184,7 +182,10 @@ elif st.session_state.app_page == "Instant Bill Auditor":
             savings = annual_user_cost - annual_benchmark_cost
             
             st.subheader(f"📊 Audit Results for Postcode {user_postcode}")
-            st.caption(f"Matched Region: **{region_name}** | Provider: **{provider_name}**")
+            if category == "Internet":
+                st.caption(f"Matched Region: **{region_name}** | Provider: **{provider_name}** | Tier: **{nbn_tier}**")
+            else:
+                st.caption(f"Matched Region: **{region_name}** | Provider: **{provider_name}**")
             
             col1, col2 = st.columns(2)
             col1.metric("Your Estimated Annual Cost", f"${annual_user_cost:,.2f}")
@@ -199,16 +200,13 @@ elif st.session_state.app_page == "Instant Bill Auditor":
                 st.write("Click below to email your audit details directly to your Living Expense Concierge.")
                 
                 # Generate a secure mailto link with pre-filled details
+                email_body_text = f"Hi Adam,\n\nI ran my {category} bill through BillScope and found potential savings!\n\n- Bill Type: {category}\n- Postcode: {user_postcode}\n- Provider: {provider_name}\n"
+                if category == "Internet":
+                    email_body_text += f"- NBN Tier: {nbn_tier}\n"
+                email_body_text += f"- Current Cost: ${current_cost} per month\n- Estimated Annual Overspend: ~${savings:,.2f}/yr\n\nPlease help me look into cheaper alternatives."
+                
                 email_subject = urllib.parse.quote(f"Bill Audit Assistance Request - Postcode {user_postcode}")
-                email_body = urllib.parse.quote(
-                    f"Hi Adam,\n\nI ran my {category} bill through BillScope and found potential savings!\n\n"
-                    f"- Bill Type: {category}\n"
-                    f"- Postcode: {user_postcode}\n"
-                    f"- Provider: {provider_name}\n"
-                    f"- Current Cost: ${current_cost} per month\n"
-                    f"- Estimated Annual Overspend: ~${savings:,.2f}/yr\n\n"
-                    f"Please help me look into cheaper alternatives."
-                )
+                email_body = urllib.parse.quote(email_body_text)
                 mailto_url = f"mailto:{CONCIERGE_EMAIL}?subject={email_subject}&body={email_body}"
                 
                 st.markdown(
@@ -251,7 +249,7 @@ elif app_page == "Contact Concierge":
                 )
                 custom_mailto = f"mailto:{CONCIERGE_EMAIL}?subject={subject}&body={body}"
                 
-                st.success("Ready! Click the data button below to launch your email client and send your request:")
+                st.success("Ready! Click the button below to launch your email client and send your request:")
                 st.markdown(
                     f'<a href="{custom_mailto}" target="_self"><button style="background-color:#0083B8; color:white; padding:10px 20px; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">📬 Open Email Client & Send</button></a>',
                     unsafe_allow_html=True

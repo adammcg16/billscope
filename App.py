@@ -61,37 +61,53 @@ st.sidebar.divider()
 st.sidebar.caption("© 2026 BillScope. Household Expense Concierge.")
 
 # ==========================================
-# PAGE 0: HOME / LANDING PAGE
+# PAGE 0: HOME / LANDING PAGE (REDESIGNED)
 # ==========================================
 if st.session_state.app_page == "Home":
-    st.title("🔍 Welcome to BillScope")
-    st.subheader("Beat the QLD 'Lazy Tax' on Your Household Bills")
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; color: #1E3A8A;'>🔍 BillScope</h1>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center; color: #4B5563;'>Stop Overpaying the QLD 'Lazy Tax' on Household Bills</h3>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
     
-    st.write(
-        "Are you paying too much for electricity or internet? BillScope lets you upload your bill or "
-        "enter your details to instantly benchmark your costs against regional averages and unlock real savings."
+    # Value Proposition Callout Box
+    st.success(
+        "✨ **Short on time?** Don't spend hours comparing providers and hunting down better deals. "
+        "Let our Living Expense Concierge handle the hard work for you. **If we can't save you money, our service is completely free.**"
     )
+
+    st.markdown("<br>", unsafe_allow_html=True)
     
-    st.divider()
-    
+    # Feature Callouts using 2 columns
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown("### ⚡ Electricity Audit")
-        st.write("Compare your quarterly or monthly energy bills against QLD regional benchmark ranges.")
+        st.markdown("### ⚡ Electricity Benchmarking")
+        st.write("Compare your energy statements against localized QLD regional averages to instantly uncover hidden padding.")
     with col2:
-        st.markdown("### 🌐 Internet / NBN")
-        st.write("Find out if your broadband plan is overpriced compared to current market averages.")
+        st.markdown("### 🌐 Broadband & NBN Audit")
+        st.write("Analyze your current speed tier and provider pricing against modern market standards to see if you're getting ripped off.")
         
+    st.markdown("<br>", unsafe_allow_html=True)
     st.divider()
+    st.markdown("<br>", unsafe_allow_html=True)
     
-    st.markdown("### How it works:")
-    st.markdown("1. **Upload or Type:** Drop your PDF bill or enter your postcode and cost.\n"
-                "2. **Instant Check:** Our engine detects if you're paying more than your neighbors.\n"
-                "3. **Request Help:** Submit your details for a free Living Expense Concierge review.")
+    # How it works section
+    st.markdown("### 🚀 How BillScope Works")
+    st.markdown(
+        """
+        * **1. Upload or Type:** Drop your PDF bill statement into our parser or enter your postcode and cost manually.
+        * **2. Instant Benchmark Check:** Our algorithm cross-references regional data to expose potential overspending.
+        * **3. Concierge Intervention:** Have our team handle the administrative headache of slashing your rates for you.
+        """
+    )
     
-    if st.button("Start Bill Audit Now 🚀", type="primary"):
-        st.session_state.app_page = "Instant Bill Auditor"
-        st.rerun()
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    # Centered CTA Button
+    col_a, col_b, col_c = st.columns([1, 2, 1])
+    with col_b:
+        if st.button("Start Free Bill Audit Now 🚀", type="primary", use_container_width=True):
+            st.session_state.app_page = "Instant Bill Auditor"
+            st.rerun()
 
 # ==========================================
 # PAGE 1: INSTANT BILL AUDITOR

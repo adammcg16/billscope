@@ -1,14 +1,39 @@
 import streamlit as st
 import pandas as pd
 import pdfplumber
-import requests
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 # App Config & Branding
 st.set_page_config(page_title="BillScope", page_icon="🔍", layout="centered")
 
-# --- WEB3FORMS CONFIGURATION ---
-WEB3FORMS_KEY = "b8a45f35-c35f-4d8f-b0ca-318daace3bfb"
-WEB3FORMS_URL = "https://api.web3forms.com/submit"
+# --- SMTP EMAIL CONFIGURATION ---
+SMTP_SERVER = "smtp.gmail.com"
+SMTP_PORT = 587
+SENDER_EMAIL = "billscope.enquiries@gmail.com"
+# Note: Ensure you use your 16-character Google App Password here if 2FA is enabled on the Gmail account
+SENDER_PASSWORD = "mignej-cydKud-xexsu5" 
+RECEIVER_EMAIL = "adammcg_16@hotmail.com"
+
+def send_smtp_email(subject, body):
+    """Sends an email notification directly to your Hotmail inbox using SMTP."""
+    msg = MIMEMultipart()
+    msg['From'] = SENDER_EMAIL
+    msg['To'] = RECEIVER_EMAIL
+    msg['Subject'] = subject
+    msg.attach(MIMEText(body, 'plain'))
+
+    try:
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server.starttls()
+        server.login(SENDER_EMAIL, SENDER_PASSWORD)
+        server.sendmail(SENDER_EMAIL, RECEIVER_EMAIL, msg.as_string())
+        server.quit()
+        return True
+    except Exception as e:
+        st.error(f"SMTP Error: {e}")
+        return False
 
 # --- LOAD BENCHMARK DATA FROM EXCEL ---
 @st.cache_data
@@ -205,32 +230,30 @@ elif st.session_state.app_page == "Instant Bill Auditor":
                     
                     if submitted:
                         if client_name and client_mobile and client_email:
-                            payload = {
-                                "access_key": WEB3FORMS_KEY,
-                                "subject": f"New BillScope Lead: {client_name} (Postcode {user_postcode})",
-                                "name": client_name,
-                                "email": client_email,
-                                "mobile": client_mobile,
-                                "bill_type": category,
-                                "postcode": user_postcode,
-                                "provider": provider_name,
-                                "nbn_tier": nbn_tier if category == "Internet" else "N/A",
-                                "current_cost": f"${current_cost}",
-                                "estimated_savings": f"${savings:,.2f}/yr",
-                                "message": user_notes
-                            }
+                            email_subject = f"New BillScope Lead: {client_name} (Postcode {user_postcode})"
+                            email_body = (
+                                f"A new audit request has been submitted through BillScope:\n\n"
+                                f"--- Client Details ---\n"
+                                f"Name: {client_name}\n"
+                                f"Mobile: {client_mobile}\n"
+                                f"Email: {client_email}\n\n"
+                                f"--- Audit Information ---\n"
+                                f"Bill Type: {category}\n"
+                                f"Postcode: {user_postcode}\n"
+                                f"Provider: {provider_name}\n"
+                                f"NBN Tier: {nbn_tier if category == 'Internet' else 'N/A'}\n"
+                                f"Current Cost: ${current_cost}\n"
+                                f"Estimated Savings: ${savings:,.2f}/yr\n\n"
+                                f"--- Client Notes ---\n"
+                                f"{user_notes}"
+                            )
                             
-                            try:
-                                response = requests.post(WEB3FORMS_URL, json=payload)
-                                result = response.json()
-                                if result.get("success"):
-                                    st.success("🎉 Success! Your request has been emailed directly to your living expense concierge. We will be in touch shortly.")
-                                else:
-                                    st.error(f"⚠️ Error sending request: {result.get('message', 'Unknown error')}")
-                            except Exception as ex:
-                                st.error(f"Connection error: {ex}")
+                            with st.spinner("Dispatching email..."):
+                                success = send_smtp_email(email_subject, email_body)
+                                if success:
+                                    st.success("🎉 Success! Your request has been sent straight to your Hotmail inbox.")
                         else:
-                            st.warning("Please fill in your Name, Mobile, and Email address so we can contact you.")
+                            st.warning("Please fill in your Name, Mobile, and Email address.")
             else:
                 st.success(f"✅ **Great Job!** Your current rate is competitive and sitting at or below the regional benchmark.")
         else:
@@ -254,25 +277,19 @@ elif st.session_state.app_page == "Contact Concierge":
         
         if submitted:
             if client_name and client_mobile and notes:
-                payload = {
-                    "access_key": WEB3FORMS_KEY,
-                    "subject": f"General BillScope Inquiry from {client_name}",
-                    "name": client_name,
-                    "email": client_email,
-                    "mobile": client_mobile,
-                    "bill_types": ", ".join(bill_types),
-                    "message": notes
-                }
+                email_subject = f"General BillScope Inquiry from {client_name}"
+                email_body = (
+                    f"Name: {client_name}\n"
+                    f"Mobile: {client_mobile}\n"
+                    f"Email: {client_email}\n"
+                    f"Target Bills: {', '.join(bill_types)}\n\n"
+                    f"Notes:\n{notes}"
+                )
                 
-                try:
-                    response = requests.post(WEB3FORMS_URL, json=payload)
-                    result = response.json()
-                    if result.get("success"):
-                        st.success("🎉 Success! Your enquiry has been sent straight to your living expense concierge.")
-                    else:
-                        st.error(f"⚠️ Error sending request: {result.get('message', 'Unknown error')}")
-                except Exception as ex:
-                    st.error(f"Connection error: {ex}")
+                with st.spinner("Dispatching email..."):
+                    success = send_smtp_email(email_subject, email_body)
+                    if success:
+                        st.success("🎉 Success! Your enquiry has been sent straight to your Hotmail inbox.")
             else:
                 st.warning("Please fill in your Name, Mobile, and Notes before submitting.")
 

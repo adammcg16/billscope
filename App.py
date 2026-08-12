@@ -29,10 +29,8 @@ if "app_page" not in st.session_state:
 # --- NAVIGATION SIDEBAR ---
 st.sidebar.title("🔍 BillScope Menu")
 
-# Pages list
 pages = ["Home", "Instant Bill Auditor", "Contact Concierge", "Terms & Conditions"]
 
-# Sync radio with session state
 selected_page = st.sidebar.radio(
     "Navigation", 
     pages, 
@@ -72,7 +70,7 @@ if st.session_state.app_page == "Home":
     st.markdown("### How it works:")
     st.markdown("1. **Upload or Type:** Drop your PDF bill or enter your postcode and cost.\n"
                 "2. **Instant Check:** Our engine detects if you're paying more than your neighbors.\n"
-                "3. **Let Us Fix It:** Click to connect directly with your Living Expense Concierge.")
+                "3. **Request Help:** Submit your details for a free Living Expense Concierge review.")
     
     if st.button("Start Bill Audit Now 🚀", type="primary"):
         st.session_state.app_page = "Instant Bill Auditor"
@@ -85,7 +83,6 @@ elif st.session_state.app_page == "Instant Bill Auditor":
     st.title("⚡ Household Bill Auditor")
     st.subheader("Upload your bill or enter details to uncover potential savings.")
 
-    # Choice of Input Method
     input_method = st.radio("Choose Input Method", ["Quick Manual Entry", "Upload Bill (PDF)"], horizontal=True)
     
     category = st.selectbox("Select Bill Type", ["Electricity", "Internet"])
@@ -95,9 +92,8 @@ elif st.session_state.app_page == "Instant Bill Auditor":
     current_cost = 150.0
     billing_cycle = "Monthly"
     provider_name = "Unknown"
-    nbn_tier = "NBN 50"  # Default tier
+    nbn_tier = "NBN 50"
     
-    # Standard Options
     internet_providers = [
         "Telstra", "Optus", "TPG", "Aussie Broadband", "Superloop", 
         "Vodafone", "Dodo", "iPrimus", "Exetel", "Leaptel", "AGL Energy", "Other"
@@ -126,7 +122,7 @@ elif st.session_state.app_page == "Instant Bill Auditor":
                 billing_cycle = st.selectbox("Billing Cycle", ["Monthly", "Quarterly"])
                 current_cost = st.number_input("Current Cost ($)", min_value=0.0, value=150.0, step=5.0)
             else:
-                billing_cycle = "Monthly"  # Force monthly for internet
+                billing_cycle = "Monthly"
                 current_cost = st.number_input("Current Cost per Month ($)", min_value=0.0, value=85.0, step=5.0)
 
     # --- METHOD B: UPLOAD PDF BILL ---
@@ -168,13 +164,11 @@ elif st.session_state.app_page == "Instant Bill Auditor":
         if not match.empty:
             region_name = match.iloc[0]["region"]
             benchmark = match.iloc[0]["benchmark_cost"]
-            suggested_provider = match.iloc[0]["provider_example"]
             
-            # Normalize to annual cost
             if category == "Electricity":
                 monthly_user = current_cost / 3 if billing_cycle == "Quarterly" else current_cost
             else:
-                monthly_user = current_cost  # Internet is monthly
+                monthly_user = current_cost
                 
             annual_user_cost = monthly_user * 12
             annual_benchmark_cost = benchmark * 12
@@ -197,65 +191,81 @@ elif st.session_state.app_page == "Instant Bill Auditor":
                 st.error(f"⚠️ **Lazy Tax Detected!** You are paying approximately **${savings:,.2f} more per year** than the regional benchmark.")
                 
                 st.markdown("### Want us to slash this bill for you?")
-                st.write("Click below to email your audit details directly to your Living Expense Concierge.")
+                st.write("Fill out your details below and send your audit request directly to Adam.")
                 
-                # Generate a secure mailto link with pre-filled details
-                email_body_text = f"Hi Adam,\n\nI ran my {category} bill through BillScope and found potential savings!\n\n- Bill Type: {category}\n- Postcode: {user_postcode}\n- Provider: {provider_name}\n"
-                if category == "Internet":
-                    email_body_text += f"- NBN Tier: {nbn_tier}\n"
-                email_body_text += f"- Current Cost: ${current_cost} per month\n- Estimated Annual Overspend: ~${savings:,.2f}/yr\n\nPlease help me look into cheaper alternatives."
-                
-                email_subject = urllib.parse.quote(f"Bill Audit Assistance Request - Postcode {user_postcode}")
-                email_body = urllib.parse.quote(email_body_text)
-                mailto_url = f"mailto:{CONCIERGE_EMAIL}?subject={email_subject}&body={email_body}"
-                
-                st.markdown(
-                    f'<a href="{mailto_url}" target="_self"><button style="background-color:#FF4B4B; color:white; padding:10px 20px; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">📧 Email Concierge to Fix My Bill</button></a>',
-                    unsafe_allow_html=True
-                )
+                # --- CLEAN ENQUIRY FORM ---
+                with st.form("audit_enquiry_form"):
+                    client_name = st.text_input("Your Full Name")
+                    client_mobile = st.text_input("Mobile Number")
+                    client_email = st.text_input("Email Address")
+                    user_notes = st.text_area("Notes / What you want reviewed", value=f"Please help me review my {category} bill. Current cost is ${current_cost} with {provider_name}.")
+                    
+                    submitted = st.form_submit_button("Submit Concierge Request 🚀")
+                    
+                    if submitted:
+                        if client_name and client_mobile and client_email:
+                            st.success("🎉 Request captured successfully!")
+                            st.info(f"Thanks {client_name}! Your details have been recorded. Click below to instantly generate a pre-filled email to Adam, or copy the summary text to text/email him directly.")
+                            
+                            # Generate safe mailto and display copy text
+                            email_body_text = f"Hi Adam,\n\nI submitted an inquiry via BillScope!\n\n-- Contact Details --\nName: {client_name}\nMobile: {client_mobile}\nEmail: {client_email}\n\n-- Audit Specs --\nBill Type: {category}\nPostcode: {user_postcode}\nProvider: {provider_name}\n"
+                            if category == "Internet":
+                                email_body_text += f"NBN Tier: {nbn_tier}\n"
+                            email_body_text += f"Current Cost: ${current_cost}\nEstimated Overspend: ~${savings:,.2f}/yr\n\nNotes:\n{user_notes}"
+                            
+                            email_subject = urllib.parse.quote(f"BillScope Lead: {client_name} - Postcode {user_postcode}")
+                            email_body = urllib.parse.quote(email_body_text)
+                            mailto_url = f"mailto:{CONCIERGE_EMAIL}?subject={email_subject}&body={email_body}"
+                            
+                            st.markdown(
+                                f'<a href="{mailto_url}" target="_self"><button style="background-color:#FF4B4B; color:white; padding:10px 20px; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">📧 Click Here to Open Email to Adam</button></a>',
+                                unsafe_allow_html=True
+                            )
+                            
+                            st.markdown("### Or copy this summary text:")
+                            st.code(email_body_text, language="text")
+                        else:
+                            st.warning("Please fill in your Name, Mobile, and Email address so Adam can contact you.")
             else:
                 st.success(f"✅ **Great Job!** Your current rate is competitive and sitting at or below the regional benchmark.")
         else:
             st.warning("⚠️ Postcode not found within current QLD regional tracking ranges. Please double-check your postcode.")
 
 # ==========================================
-# PAGE 2: CONTACT CONCIERGE (CUSTOM NOTE FORM)
+# PAGE 2: CONTACT CONCIERGE (GENERAL FORM)
 # ==========================================
 elif app_page == "Contact Concierge":
     st.title("💬 Living Expense Concierge")
-    st.subheader("Have custom bills or multiple items you want reviewed? Send a note directly.")
+    st.subheader("Have multiple bills or custom items you want reviewed? Send a note directly.")
     
-    st.write("Fill out the details below and click send to open your email client with your message pre-loaded for Adam.")
-    
-    with st.form("custom_concierge_form"):
+    with st.form("general_concierge_form"):
         client_name = st.text_input("Your Name")
-        client_phone = st.text_input("Phone Number")
-        client_email = st.text_input("Your Email Address")
+        client_mobile = st.text_input("Mobile Number")
+        client_email = st.text_input("Email Address")
         bill_types = st.multiselect("What bills do you want help with?", ["Electricity", "Internet / NBN", "Mobile Phone", "Insurance", "Streaming / Subscriptions", "Other"])
-        notes = st.text_area("Custom Note / Details", placeholder="e.g., My energy bill just jumped up and I want to see if I can switch to a cheaper provider.")
+        notes = st.text_area("Notes / Details", placeholder="e.g., My energy and internet bills are too high, please help me review them.")
         
-        submitted = st.form_submit_button("Generate & Send Email to Concierge 🚀")
+        submitted = st.form_submit_button("Submit General Enquiry 🚀")
         
         if submitted:
-            if client_name and notes:
-                subject = urllib.parse.quote(f"Custom Concierge Request from {client_name}")
-                body = urllib.parse.quote(
-                    f"Hi Adam,\n\nI would like help with my household expenses.\n\n"
-                    f"Name: {client_name}\n"
-                    f"Phone: {client_phone}\n"
-                    f"Email: {client_email}\n"
-                    f"Bills to review: {', '.join(bill_types)}\n\n"
-                    f"Notes:\n{notes}"
-                )
+            if client_name and client_mobile and notes:
+                st.success("🎉 Request captured successfully!")
+                
+                general_body_text = f"Hi Adam,\n\nI submitted a general inquiry via BillScope!\n\nName: {client_name}\nMobile: {client_mobile}\nEmail: {client_email}\nBills to review: {', '.join(bill_types)}\n\nNotes:\n{notes}"
+                
+                subject = urllib.parse.quote(f"General BillScope Inquiry from {client_name}")
+                body = urllib.parse.quote(general_body_text)
                 custom_mailto = f"mailto:{CONCIERGE_EMAIL}?subject={subject}&body={body}"
                 
-                st.success("Ready! Click the button below to launch your email client and send your request:")
                 st.markdown(
-                    f'<a href="{custom_mailto}" target="_self"><button style="background-color:#0083B8; color:white; padding:10px 20px; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">📬 Open Email Client & Send</button></a>',
+                    f'<a href="{custom_mailto}" target="_self"><button style="background-color:#0083B8; color:white; padding:10px 20px; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">📬 Click Here to Open Email to Adam</button></a>',
                     unsafe_allow_html=True
                 )
+                
+                st.markdown("### Or copy this summary text:")
+                st.code(general_body_text, language="text")
             else:
-                st.warning("Please provide at least your name and some notes before submitting.")
+                st.warning("Please fill in your Name, Mobile, and Notes before submitting.")
 
 # ==========================================
 # PAGE 3: TERMS & CONDITIONS

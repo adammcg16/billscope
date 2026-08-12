@@ -78,7 +78,17 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- NAVIGATION SIDEBAR WITH LOGO ---
+# --- HELPER FUNCTION FOR TOP HEADER LOGO ---
+def render_top_logo():
+    try:
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.image("logo.png", use_container_width=True)
+    except Exception:
+        # Fallback text if logo.png hasn't been uploaded yet
+        st.markdown("<h2 style='text-align: center;'>🔍 BILLSCOPE</h2>", unsafe_allow_html=True)
+
+# --- NAVIGATION SIDEBAR ---
 try:
     st.sidebar.image("logo.png", use_container_width=True)
 except Exception:
@@ -102,15 +112,8 @@ st.sidebar.caption("© 2026 BillScope. Household Expense Concierge.")
 # PAGE 0: HOME / LANDING PAGE (SAAS REDESIGN)
 # ==========================================
 if st.session_state.app_page == "Home":
+    render_top_logo()
     st.markdown("<br>", unsafe_allow_html=True)
-    
-    # Display Logo Centered in Hero Section
-    try:
-        col_img1, col_img2, col_img3 = st.columns([1, 2, 1])
-        with col_img2:
-            st.image("logo.png", use_container_width=True)
-    except Exception:
-        pass
 
     # Hero Section Styled to match reference design
     st.markdown(
@@ -183,6 +186,7 @@ if st.session_state.app_page == "Home":
 # PAGE 1: INSTANT BILL AUDITOR
 # ==========================================
 elif st.session_state.app_page == "Instant Bill Auditor":
+    render_top_logo()
     st.title("⚡ Household Bill Auditor")
     st.subheader("Upload your bill or enter details to uncover potential savings.")
 
@@ -347,6 +351,7 @@ elif st.session_state.app_page == "Instant Bill Auditor":
 # PAGE 2: CONTACT CONCIERGE (GENERAL FORM)
 # ==========================================
 elif st.session_state.app_page == "Contact Concierge":
+    render_top_logo()
     st.title("💬 Living Expense Concierge")
     st.subheader("Have multiple bills or custom items you want reviewed? Send a note directly.")
     
@@ -381,6 +386,7 @@ elif st.session_state.app_page == "Contact Concierge":
 # PAGE 3: TERMS & CONDITIONS
 # ==========================================
 elif st.session_state.app_page == "Terms & Conditions":
+    render_top_logo()
     st.title("⚖️ Terms of Service & Disclaimers")
     st.markdown("""
     ### 1. General Information Only

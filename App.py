@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import pdfplumber
 import resend
+import base64
 
 # App Config & Branding
 st.set_page_config(page_title="BillScope", page_icon="🔍", layout="centered")
@@ -43,16 +44,28 @@ except Exception as e:
 if "app_page" not in st.session_state:
     st.session_state.app_page = "Home"
 
-# --- CUSTOM CSS FOR DARK MODE / MODERN SAAS GLOW DESIGN ---
+# --- CUSTOM CSS FOR DARK MODE & IMPROVED SIDEBAR READABILITY ---
 st.markdown("""
     <style>
+    /* Main App Background */
     .stApp {
         background-color: #0B0F19;
         color: #F3F4F6;
     }
-    .sidebar .stSidebar {
-        background-color: #111827;
+    
+    /* Fixed Sidebar Styling for Perfect Readability */
+    [data-testid="stSidebar"] {
+        background-color: #1F2937 !important;
+        border-right: 1px solid #374151;
     }
+    [data-testid="stSidebar"] .stRadio label p {
+        color: #FFFFFF !important;
+        font-weight: 500;
+    }
+    [data-testid="stSidebar"] span, [data-testid="stSidebar"] div, [data-testid="stSidebar"] caption {
+        color: #E5E7EB !important;
+    }
+
     h1, h2, h3 {
         color: #FFFFFF !important;
     }
@@ -78,19 +91,37 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- HELPER FUNCTION FOR TOP HEADER LOGO ---
+# --- ROBUST LOGO HELPER (USING BASE64 HTML) ---
 def render_top_logo():
     try:
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
-            st.image("logo.png", use_container_width=True)
+        with open("logo.png", "rb") as image_file:
+            encoded_string = base64.b64encode(image_file.read()).decode()
+        
+        # Center-aligned HTML image rendering that never fails to load
+        st.markdown(
+            f"""
+            <div style="text-align: center; margin-bottom: 1.5rem;">
+                <img src="data:image/png;base64,{encoded_string}" style="max-width: 220px; height: auto;" />
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
     except Exception:
-        # Fallback text if logo.png hasn't been uploaded yet
-        st.markdown("<h2 style='text-align: center;'>🔍 BILLSCOPE</h2>", unsafe_allow_html=True)
+        # Fallback text if logo.png isn't found
+        st.markdown("<h2 style='text-align: center; color: #3B82F6;'>🔍 BILLSCOPE</h2>", unsafe_allow_html=True)
 
 # --- NAVIGATION SIDEBAR ---
 try:
-    st.sidebar.image("logo.png", use_container_width=True)
+    with open("logo.png", "rb") as image_file:
+        encoded_sidebar_logo = base64.b64encode(image_file.read()).decode()
+    st.sidebar.markdown(
+        f"""
+        <div style="text-align: center; margin-bottom: 1rem;">
+            <img src="data:image/png;base64,{encoded_sidebar_logo}" style="max-width: 140px; height: auto;" />
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 except Exception:
     st.sidebar.title("🔍 BillScope")
 

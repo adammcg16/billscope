@@ -22,9 +22,25 @@ except Exception as e:
     st.error(f"Error loading Excel file: {e}. Please ensure 'billscope_tabs.xlsx' is uploaded to your GitHub repository.")
     st.stop()
 
+# --- NAVIGATION SESSION STATE MANAGEMENT ---
+if "app_page" not in st.session_state:
+    st.session_state.app_page = "Home"
+
 # --- NAVIGATION SIDEBAR ---
 st.sidebar.title("🔍 BillScope Menu")
-app_page = st.sidebar.radio("Navigation", ["Home", "Instant Bill Auditor", "Contact Concierge", "Terms & Conditions"])
+
+# Pages list
+pages = ["Home", "Instant Bill Auditor", "Contact Concierge", "Terms & Conditions"]
+
+# Sync radio with session state
+selected_page = st.sidebar.radio(
+    "Navigation", 
+    pages, 
+    index=pages.index(st.session_state.app_page)
+)
+
+if selected_page != st.session_state.app_page:
+    st.session_state.app_page = selected_page
 
 st.sidebar.divider()
 st.sidebar.caption("© 2026 BillScope. Household Expense Concierge.")
@@ -32,7 +48,7 @@ st.sidebar.caption("© 2026 BillScope. Household Expense Concierge.")
 # ==========================================
 # PAGE 0: HOME / LANDING PAGE
 # ==========================================
-if app_page == "Home":
+if st.session_state.app_page == "Home":
     st.title("🔍 Welcome to BillScope")
     st.subheader("Beat the QLD 'Lazy Tax' on Your Household Bills")
     
@@ -58,13 +74,15 @@ if app_page == "Home":
                 "2. **Instant Check:** Our engine detects if you're paying more than your neighbors.\n"
                 "3. **Let Us Fix It:** Click to connect directly with your Living Expense Concierge.")
     
+    # When clicked, update session state and rerun to jump to the Auditor page immediately
     if st.button("Start Bill Audit Now 🚀", type="primary"):
-        st.info("Use the left navigation menu and select **Instant Bill Auditor** to begin!")
+        st.session_state.app_page = "Instant Bill Auditor"
+        st.rerun()
 
 # ==========================================
 # PAGE 1: INSTANT BILL AUDITOR
 # ==========================================
-elif app_page == "Instant Bill Auditor":
+elif st.session_state.app_page == "Instant Bill Auditor":
     st.title("⚡ Household Bill Auditor")
     st.subheader("Upload your bill or enter details to uncover potential savings.")
 
@@ -172,7 +190,7 @@ elif app_page == "Instant Bill Auditor":
 # ==========================================
 # PAGE 2: CONTACT CONCIERGE (CUSTOM NOTE FORM)
 # ==========================================
-elif app_page == "Contact Concierge":
+elif st.session_state.app_page == "Contact Concierge":
     st.title("💬 Living Expense Concierge")
     st.subheader("Have custom bills or multiple items you want reviewed? Send a note directly.")
     
@@ -211,7 +229,7 @@ elif app_page == "Contact Concierge":
 # ==========================================
 # PAGE 3: TERMS & CONDITIONS
 # ==========================================
-elif app_page == "Terms & Conditions":
+elif st.session_state.app_page == "Terms & Conditions":
     st.title("⚖️ Terms of Service & Disclaimers")
     st.markdown("""
     ### 1. General Information Only

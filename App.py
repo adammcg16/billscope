@@ -14,7 +14,7 @@ def send_resend_email(subject, body):
     """Sends an email notification directly via Resend API to your verified inbox."""
     try:
         params = {
-            "from": "BillScope <onboarding@resend.dev>", # Use onboarding@resend.dev for testing without domain verification
+            "from": "BillScope <onboarding@resend.dev>", 
             "to": [RECEIVER_EMAIL],
             "subject": subject,
             "text": body,
@@ -174,38 +174,46 @@ elif st.session_state.app_page == "Instant Bill Auditor":
 
     st.divider()
 
-    # --- BENCHMARK EXECUTION & RESULTS ---
+    # --- PERSISTENT STATE MANAGEMENT FOR AUDIT RESULTS ---
+    if "audit_run" not in st.session_state:
+        st.session_state.audit_run = False
+
     if st.button("Run Savings Analysis 🔍", type="primary"):
-        match = df[(df["postcode_start"] <= user_postcode) & (df["postcode_end"] >= user_postcode)]
+        st.session_state.audit_run = True
+        st.session_state.audited_category = category
+        st.session_state.audited_postcode = user_postcode
+        st.session_state.audited_provider = provider_name
+        st.session_state.audited_nbn_tier = nbn_tier
+        st.session_state.audited_current_cost = current_cost
         
+        match = df[(df["postcode_start"] <= user_postcode) & (df["postcode_end"] >= user_postcode)]
         if not match.empty:
             region_name = match.iloc[0]["region"]
             benchmark = match.iloc[0]["benchmark_cost"]
-            
-            if category == "Electricity":
-                monthly_user = current_cost / 3 if billing_cycle == "Quarterly" else current_cost
+            monthly_user = current_cost / 3 if (category == "Electricity" and billing_cycle == "Quarterly") else current_cost
+            st.session_state.audited_savings = (monthly_user * 12) - (benchmark * 12)
+            st.session_state.audited_user_cost = monthly_user * 12
+            st.session_state.audited_benchmark_cost = benchmark * 12
+            st.session_state.audited_region = region_name
+        else:
+            st.session_state.audited_savings = None
+
+    if st.session_state.audit_run:
+        if st.session_state.audited_savings is not None:
+            st.subheader(f"📊 Audit Results for Postcode {st.session_state.audited_postcode}")
+            if st.session_state.audited_category == "Internet":
+                st.caption(f"Matched Region: **{st.session_state.audited_region}** | Provider: **{st.session_state.audited_provider}** | Tier: **{st.session_state.audited_nbn_tier}**")
             else:
-                monthly_user = current_cost
-                
-            annual_user_cost = monthly_user * 12
-            annual_benchmark_cost = benchmark * 12
-            
-            savings = annual_user_cost - annual_benchmark_cost
-            
-            st.subheader(f"📊 Audit Results for Postcode {user_postcode}")
-            if category == "Internet":
-                st.caption(f"Matched Region: **{region_name}** | Provider: **{provider_name}** | Tier: **{nbn_tier}**")
-            else:
-                st.caption(f"Matched Region: **{region_name}** | Provider: **{provider_name}**")
+                st.caption(f"Matched Region: **{st.session_state.audited_region}** | Provider: **{st.session_state.audited_provider}**")
             
             col1, col2 = st.columns(2)
-            col1.metric("Your Estimated Annual Cost", f"${annual_user_cost:,.2f}")
-            col2.metric("Regional Benchmark Target", f"${annual_benchmark_cost:,.2f}")
+            col1.metric("Your Estimated Annual Cost", f"${st.session_state.audited_user_cost:,.2f}")
+            col2.metric("Regional Benchmark Target", f"${st.session_state.audited_benchmark_cost:,.2f}")
             
             st.markdown("---")
             
-            if savings > 0:
-                st.error(f"⚠️ **Lazy Tax Detected!** You are paying approximately **${savings:,.2f} more per year** than the regional benchmark.")
+            if st.session_state.audited_savings > 0:
+                st.error(f"⚠️ **Lazy Tax Detected!** You are paying approximately **${st.session_state.audited_savings:,.2f} more per year** than the regional benchmark.")
                 
                 st.markdown("### Want us to slash this bill for you?")
                 st.write("Fill out your details below to send your audit request straight to your living expense concierge.")
@@ -213,14 +221,14 @@ elif st.session_state.app_page == "Instant Bill Auditor":
                 with st.form("audit_enquiry_form"):
                     client_name = st.text_input("Your Full Name")
                     client_mobile = st.text_input("Mobile Number")
-                    client_email = st.text_input("Email Address")  # Added missing input field
-                    user_notes = st.text_area("Notes / What you want reviewed", value=f"Please help me review my {category} bill. Current cost is ${current_cost} with {provider_name}.")
+                    client_email = st.text_input("Email Address")
+                    user_notes = st.text_area("Notes / What you want reviewed", value=f"Please help me review my {st.session_state.audited_category} bill. Current cost is ${st.session_state.audited_current_cost} with {st.session_state.audited_provider}.")
                     
                     submitted = st.form_submit_button("Send Request to Your Living Expense Concierge 🚀")
                     
                     if submitted:
                         if client_name and client_mobile and client_email:
-                            email_subject = f"New BillScope Lead: {client_name} (Postcode {user_postcode})"
+                            email_subject = f"New BillScope Lead: {client_name} (Postcode {st.session_state.audited_postcode})"
                             email_body = (
                                 f"A new audit request has been submitted through BillScope:\n\n"
                                 f"--- Client Details ---\n"
@@ -228,12 +236,12 @@ elif st.session_state.app_page == "Instant Bill Auditor":
                                 f"Mobile: {client_mobile}\n"
                                 f"Email: {client_email}\n\n"
                                 f"--- Audit Information ---\n"
-                                f"Bill Type: {category}\n"
-                                f"Postcode: {user_postcode}\n"
-                                f"Provider: {provider_name}\n"
-                                f"NBN Tier: {nbn_tier if category == 'Internet' else 'N/A'}\n"
-                                f"Current Cost: ${current_cost}\n"
-                                f"Estimated Savings: ${savings:,.2f}/yr\n\n"
+                                f"Bill Type: {st.session_state.audited_category}\n"
+                                f"Postcode: {st.session_state.audited_postcode}\n"
+                                f"Provider: {st.session_state.audited_provider}\n"
+                                f"NBN Tier: {st.session_state.audited_nbn_tier if st.session_state.audited_category == 'Internet' else 'N/A'}\n"
+                                f"Current Cost: ${st.session_state.audited_current_cost}\n"
+                                f"Estimated Savings: ${st.session_state.audited_savings:,.2f}/yr\n\n"
                                 f"--- Client Notes ---\n"
                                 f"{user_notes}"
                             )
@@ -241,7 +249,7 @@ elif st.session_state.app_page == "Instant Bill Auditor":
                             with st.spinner("Dispatching email..."):
                                 success = send_resend_email(email_subject, email_body)
                                 if success:
-                                    st.success("🎉 Success! Your request has been sent straight to your living expense concierge.")
+                                    st.success("🎉 Success! Your enquiry has been sent straight to your living expense concierge.")
                         else:
                             st.warning("Please fill in your Name, Mobile, and Email address.")
             else:

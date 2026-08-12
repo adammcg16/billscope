@@ -219,12 +219,14 @@ elif st.session_state.app_page == "Instant Bill Auditor":
                                 "_subject": f"New BillScope Lead: {client_name} (Postcode {user_postcode})"
                             }
                             
+                            headers = {"Accept": "application/json"}
+                            
                             try:
-                                response = requests.post(FORMSPREE_URL, data=payload)
-                                if response.status_code == 200:
+                                response = requests.post(FORMSPREE_URL, data=payload, headers=headers)
+                                if response.status_code in [200, 201]:
                                     st.success("🎉 Success! Your request has been emailed directly to your living expense concierge. We will be in touch shortly.")
                                 else:
-                                    st.error("⚠️ Error sending request. Please check your Formspree configuration URL.")
+                                    st.error(f"⚠️ Error sending request (Code {response.status_code}): {response.text}")
                             except Exception as ex:
                                 st.error(f"Connection error: {ex}")
                         else:
@@ -237,7 +239,7 @@ elif st.session_state.app_page == "Instant Bill Auditor":
 # ==========================================
 # PAGE 2: CONTACT CONCIERGE (GENERAL FORM)
 # ==========================================
-elif app_page == "Contact Concierge":
+elif st.session_state.app_page == "Contact Concierge":
     st.title("💬 Living Expense Concierge")
     st.subheader("Have multiple bills or custom items you want reviewed? Send a note directly.")
     
@@ -261,12 +263,14 @@ elif app_page == "Contact Concierge":
                     "_subject": f"General BillScope Inquiry from {client_name}"
                 }
                 
+                headers = {"Accept": "application/json"}
+                
                 try:
-                    response = requests.post(FORMSPREE_URL, data=payload)
-                    if response.status_code == 200:
+                    response = requests.post(FORMSPREE_URL, data=payload, headers=headers)
+                    if response.status_code in [200, 201]:
                         st.success("🎉 Success! Your enquiry has been sent straight to your living expense concierge.")
                     else:
-                        st.error("⚠️ Error sending request. Please check your Formspree configuration URL.")
+                        st.error(f"⚠️ Error sending request (Code {response.status_code}): {response.text}")
                 except Exception as ex:
                     st.error(f"Connection error: {ex}")
             else:

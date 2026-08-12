@@ -44,45 +44,45 @@ except Exception as e:
 if "app_page" not in st.session_state:
     st.session_state.app_page = "Home"
 
-# --- CUSTOM CSS FOR DARK MODE & SIDEBAR READABILITY ---
+# --- CUSTOM CSS FOR LIGHT MODE & MATCHED LOGO THEME ---
 st.markdown("""
     <style>
-    /* Main App Background */
+    /* Main App Light Background */
     .stApp {
-        background-color: #0B0F19;
-        color: #F3F4F6;
+        background-color: #FFFFFF;
+        color: #1F2937;
     }
     
-    /* Fixed Sidebar Styling for Perfect Readability */
+    /* Clean Sidebar Styling */
     [data-testid="stSidebar"] {
-        background-color: #1F2937 !important;
-        border-right: 1px solid #374151;
+        background-color: #F8FAFC !important;
+        border-right: 1px solid #E2E8F0;
     }
     [data-testid="stSidebar"] .stRadio label p {
-        color: #FFFFFF !important;
+        color: #1F2937 !important;
         font-weight: 500;
     }
     [data-testid="stSidebar"] span, [data-testid="stSidebar"] div, [data-testid="stSidebar"] caption {
-        color: #E5E7EB !important;
+        color: #475569 !important;
     }
 
     h1, h2, h3 {
-        color: #FFFFFF !important;
+        color: #0F172A !important;
     }
     p, label, span {
-        color: #D1D5DB !important;
+        color: #334155 !important;
     }
     .hero-container {
         padding: 2rem 1rem;
-        background: linear-gradient(135deg, #1E1B4B 0%, #0B0F19 100%);
-        border: 1px solid #1F2937;
+        background: linear-gradient(135deg, #F0Fdf4 0%, #EFF6FF 100%);
+        border: 1px solid #E2E8F0;
         border-radius: 16px;
         text-align: center;
         margin-bottom: 2rem;
     }
     .feature-card {
-        background-color: #111827;
-        border: 1px solid #1F2937;
+        background-color: #F8FAFC;
+        border: 1px solid #E2E8F0;
         padding: 1.5rem;
         border-radius: 12px;
         text-align: center;
@@ -91,23 +91,22 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- LOGO HELPER WITH DARK MODE BACKGROUND BLENDING ---
+# --- LOGO HELPER FOR LIGHT MODE ---
 def render_top_logo():
     try:
         with open("logo.png", "rb") as image_file:
             encoded_string = base64.b64encode(image_file.read()).decode()
         
-        # Wrapped in a subtle matching dark card container with rounded corners so the white box matches the theme seamlessly
         st.markdown(
             f"""
-            <div style="text-align: center; margin-bottom: 1.5rem; padding: 12px; background-color: #111827; border: 1px solid #1F2937; border-radius: 16px; max-width: 320px; margin-left: auto; margin-right: auto;">
-                <img src="data:image/png;base64,{encoded_string}" style="max-width: 100%; height: auto; border-radius: 8px;" />
+            <div style="text-align: center; margin-bottom: 1.5rem; max-width: 320px; margin-left: auto; margin-right: auto;">
+                <img src="data:image/png;base64,{encoded_string}" style="max-width: 100%; height: auto;" />
             </div>
             """,
             unsafe_allow_html=True
         )
     except Exception:
-        st.markdown("<h2 style='text-align: center; color: #3B82F6;'>🔍 BILLSCOPE</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align: center; color: #2563EB;'>🔍 BILLSCOPE</h2>", unsafe_allow_html=True)
 
 # --- NAVIGATION SIDEBAR ---
 try:
@@ -115,8 +114,8 @@ try:
         encoded_sidebar_logo = base64.b64encode(image_file.read()).decode()
     st.sidebar.markdown(
         f"""
-        <div style="text-align: center; margin-bottom: 1rem; padding: 8px; background-color: #111827; border-radius: 12px; border: 1px solid #374151;">
-            <img src="data:image/png;base64,{encoded_sidebar_logo}" style="max-width: 100%; height: auto; border-radius: 6px;" />
+        <div style="text-align: center; margin-bottom: 1rem;">
+            <img src="data:image/png;base64,{encoded_sidebar_logo}" style="max-width: 100%; height: auto;" />
         </div>
         """,
         unsafe_allow_html=True
@@ -139,7 +138,7 @@ st.sidebar.divider()
 st.sidebar.caption("© 2026 BillScope. Household Expense Concierge.")
 
 # ==========================================
-# PAGE 0: HOME / LANDING PAGE (SAAS REDESIGN)
+# PAGE 0: HOME / LANDING PAGE
 # ==========================================
 if st.session_state.app_page == "Home":
     render_top_logo()
@@ -149,9 +148,9 @@ if st.session_state.app_page == "Home":
         """
         <div class="hero-container">
             <h1 style='font-size: 2.2rem; font-weight: 800; letter-spacing: -0.025em; margin-bottom: 1rem;'>
-                Take Control of Your Bills & <br><span style='color: #3B82F6;'>Start Saving Money Instantly.</span>
+                Take Control of Your Bills & <br><span style='color: #2563EB;'>Start Saving Money Instantly.</span>
             </h1>
-            <p style='font-size: 1.1rem; color: #9CA3AF; max-width: 600px; margin: 0 auto 1.5rem auto;'>
+            <p style='font-size: 1.1rem; color: #475569; max-width: 600px; margin: 0 auto 1.5rem auto;'>
                 BILLSCOPE reviews your monthly expenses, finds better deals, and negotiates lower rates on your behalf. Effortless savings, guaranteed.
             </p>
         </div>
@@ -173,7 +172,7 @@ if st.session_state.app_page == "Home":
             """
             <div class="feature-card">
                 <h4>1. Upload Bills</h4>
-                <p style='font-size: 0.85rem; color: #9CA3AF;'>Securely upload your bills via PDF or quick manual form.</p>
+                <p style='font-size: 0.85rem; color: #475569;'>Securely upload your bills via PDF or quick manual form.</p>
             </div>
             """, 
             unsafe_allow_html=True
@@ -183,7 +182,7 @@ if st.session_state.app_page == "Home":
             """
             <div class="feature-card">
                 <h4>2. We Analyze</h4>
-                <p style='font-size: 0.85rem; color: #9CA3AF;'>Engine scans for savings, pricing padding, and regional discrepancies.</p>
+                <p style='font-size: 0.85rem; color: #475569;'>Engine scans for savings, pricing padding, and regional discrepancies.</p>
             </div>
             """, 
             unsafe_allow_html=True
@@ -193,7 +192,7 @@ if st.session_state.app_page == "Home":
             """
             <div class="feature-card">
                 <h4>3. You Save</h4>
-                <p style='font-size: 0.85rem; color: #9CA3AF;'>Get notified of lower rates and approve your real household savings.</p>
+                <p style='font-size: 0.85rem; color: #475569;'>Get notified of lower rates and approve your real household savings.</p>
             </div>
             """, 
             unsafe_allow_html=True

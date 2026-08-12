@@ -1,12 +1,13 @@
 import streamlit as st
 import pandas as pd
 import pdfplumber
-import urllib.parse
+import requests
 
 # App Config & Branding
 st.set_page_config(page_title="BillScope", page_icon="🔍", layout="centered")
 
-CONCIERGE_EMAIL = "adammcg_16@hotmail.com"
+# --- CONFIGURED FORMSPREE ENDPOINT URL ---
+FORMSPREE_URL = "https://formspree.io/f/xyegwaek"
 
 # --- LOAD BENCHMARK DATA FROM EXCEL ---
 @st.cache_data
@@ -191,39 +192,41 @@ elif st.session_state.app_page == "Instant Bill Auditor":
                 st.error(f"⚠️ **Lazy Tax Detected!** You are paying approximately **${savings:,.2f} more per year** than the regional benchmark.")
                 
                 st.markdown("### Want us to slash this bill for you?")
-                st.write("Fill out your details below and send your audit request directly to Adam.")
+                st.write("Fill out your details below to send your audit request straight to Adam's inbox.")
                 
-                # --- CLEAN ENQUIRY FORM ---
+                # --- AUTOMATED BACKEND FORM ---
                 with st.form("audit_enquiry_form"):
                     client_name = st.text_input("Your Full Name")
                     client_mobile = st.text_input("Mobile Number")
                     client_email = st.text_input("Email Address")
                     user_notes = st.text_area("Notes / What you want reviewed", value=f"Please help me review my {category} bill. Current cost is ${current_cost} with {provider_name}.")
                     
-                    submitted = st.form_submit_button("Submit Concierge Request 🚀")
+                    submitted = st.form_submit_button("Send Request to Adam 🚀")
                     
                     if submitted:
                         if client_name and client_mobile and client_email:
-                            st.success("🎉 Request captured successfully!")
-                            st.info(f"Thanks {client_name}! Your details have been recorded. Click below to instantly generate a pre-filled email to Adam, or copy the summary text to text/email him directly.")
+                            payload = {
+                                "name": client_name,
+                                "mobile": client_mobile,
+                                "email": client_email,
+                                "bill_type": category,
+                                "postcode": user_postcode,
+                                "provider": provider_name,
+                                "nbn_tier": nbn_tier if category == "Internet" else "N/A",
+                                "current_cost": f"${current_cost}",
+                                "estimated_savings": f"${savings:,.2f}/yr",
+                                "notes": user_notes,
+                                "_subject": f"New BillScope Lead: {client_name} (Postcode {user_postcode})"
+                            }
                             
-                            # Generate safe mailto and display copy text
-                            email_body_text = f"Hi Adam,\n\nI submitted an inquiry via BillScope!\n\n-- Contact Details --\nName: {client_name}\nMobile: {client_mobile}\nEmail: {client_email}\n\n-- Audit Specs --\nBill Type: {category}\nPostcode: {user_postcode}\nProvider: {provider_name}\n"
-                            if category == "Internet":
-                                email_body_text += f"NBN Tier: {nbn_tier}\n"
-                            email_body_text += f"Current Cost: ${current_cost}\nEstimated Overspend: ~${savings:,.2f}/yr\n\nNotes:\n{user_notes}"
-                            
-                            email_subject = urllib.parse.quote(f"BillScope Lead: {client_name} - Postcode {user_postcode}")
-                            email_body = urllib.parse.quote(email_body_text)
-                            mailto_url = f"mailto:{CONCIERGE_EMAIL}?subject={email_subject}&body={email_body}"
-                            
-                            st.markdown(
-                                f'<a href="{mailto_url}" target="_self"><button style="background-color:#FF4B4B; color:white; padding:10px 20px; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">📧 Click Here to Open Email to Adam</button></a>',
-                                unsafe_allow_html=True
-                            )
-                            
-                            st.markdown("### Or copy this summary text:")
-                            st.code(email_body_text, language="text")
+                            try:
+                                response = requests.post(FORMSPREE_URL, data=payload)
+                                if response.status_code == 200:
+                                    st.success("🎉 Success! Your request has been emailed directly to Adam. He will be in touch shortly.")
+                                else:
+                                    st.error("⚠️ Error sending request. Please check your Formspree configuration URL.")
+                            except Exception as ex:
+                                st.error(f"Connection error: {ex}")
                         else:
                             st.warning("Please fill in your Name, Mobile, and Email address so Adam can contact you.")
             else:
@@ -245,25 +248,27 @@ elif app_page == "Contact Concierge":
         bill_types = st.multiselect("What bills do you want help with?", ["Electricity", "Internet / NBN", "Mobile Phone", "Insurance", "Streaming / Subscriptions", "Other"])
         notes = st.text_area("Notes / Details", placeholder="e.g., My energy and internet bills are too high, please help me review them.")
         
-        submitted = st.form_submit_button("Submit General Enquiry 🚀")
+        submitted = st.form_submit_button("Send General Enquiry 🚀")
         
         if submitted:
             if client_name and client_mobile and notes:
-                st.success("🎉 Request captured successfully!")
+                payload = {
+                    "name": client_name,
+                    "mobile": client_mobile,
+                    "email": client_email,
+                    "bill_type": ", ".join(bill_types),
+                    "notes": notes,
+                    "_subject": f"General BillScope Inquiry from {client_name}"
+                }
                 
-                general_body_text = f"Hi Adam,\n\nI submitted a general inquiry via BillScope!\n\nName: {client_name}\nMobile: {client_mobile}\nEmail: {client_email}\nBills to review: {', '.join(bill_types)}\n\nNotes:\n{notes}"
-                
-                subject = urllib.parse.quote(f"General BillScope Inquiry from {client_name}")
-                body = urllib.parse.quote(general_body_text)
-                custom_mailto = f"mailto:{CONCIERGE_EMAIL}?subject={subject}&body={body}"
-                
-                st.markdown(
-                    f'<a href="{custom_mailto}" target="_self"><button style="background-color:#0083B8; color:white; padding:10px 20px; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">📬 Click Here to Open Email to Adam</button></a>',
-                    unsafe_allow_html=True
-                )
-                
-                st.markdown("### Or copy this summary text:")
-                st.code(general_body_text, language="text")
+                try:
+                    response = requests.post(FORMSPREE_URL, data=payload)
+                    if response.status_code == 200:
+                        st.success("🎉 Success! Your enquiry has been sent straight to Adam's inbox.")
+                    else:
+                        st.error("⚠️ Error sending request. Please check your Formspree configuration URL.")
+                except Exception as ex:
+                    st.error(f"Connection error: {ex}")
             else:
                 st.warning("Please fill in your Name, Mobile, and Notes before submitting.")
 

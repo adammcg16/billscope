@@ -19,7 +19,7 @@ def send_resend_email(subject, body):
             "subject": subject,
             "text": body,
         }
-        email = resend.Emails.send(params)
+        resend.Emails.send(params)
         return True
     except Exception as e:
         st.error(f"Email Dispatch Error: {e}")
@@ -43,6 +43,48 @@ except Exception as e:
 if "app_page" not in st.session_state:
     st.session_state.app_page = "Home"
 
+# --- CUSTOM CSS FOR DARK MODE / MODERN SAAS GLOW DESIGN ---
+st.markdown("""
+    <style>
+    .stApp {
+        background-color: #0B0F19;
+        color: #F3F4F6;
+    }
+    .sidebar .stSidebar {
+        background-color: #111827;
+    }
+    h1, h2, h3 {
+        color: #FFFFFF !important;
+    }
+    p, label, span {
+        color: #D1D5DB !important;
+    }
+    .hero-container {
+        padding: 2rem 1rem;
+        background: linear-gradient(135deg, #1E1B4B 0%, #0B0F19 100%);
+        border: 1px solid #1F2937;
+        border-radius: 16px;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    .feature-card {
+        background-color: #111827;
+        border: 1px solid #1F2937;
+        padding: 1.5rem;
+        border-radius: 12px;
+        text-align: center;
+        height: 100%;
+    }
+    .metric-card {
+        background-color: #111827;
+        border: 1px solid #374151;
+        padding: 1rem;
+        border-radius: 10px;
+        text-align: center;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 # --- NAVIGATION SIDEBAR ---
 st.sidebar.title("🔍 BillScope Menu")
 
@@ -61,13 +103,25 @@ st.sidebar.divider()
 st.sidebar.caption("© 2026 BillScope. Household Expense Concierge.")
 
 # ==========================================
-# PAGE 0: HOME / LANDING PAGE (REDESIGNED)
+# PAGE 0: HOME / LANDING PAGE (SAAS REDESIGN)
 # ==========================================
 if st.session_state.app_page == "Home":
     st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("<h1 style='text-align: center; color: #1E3A8A;'>🔍 BillScope</h1>", unsafe_allow_html=True)
-    st.markdown("<h3 style='text-align: center; color: #4B5563;'>Stop Overpaying the QLD 'Lazy Tax' on Household Bills</h3>", unsafe_allow_html=True)
-    st.markdown("<br>", unsafe_allow_html=True)
+    
+    # Hero Section Styled to match reference design
+    st.markdown(
+        """
+        <div class="hero-container">
+            <h1 style='font-size: 2.5rem; font-weight: 800; letter-spacing: -0.025em; margin-bottom: 1rem;'>
+                Take Control of Your Bills & <br><span style='color: #3B82F6;'>Start Saving Money Instantly.</span>
+            </h1>
+            <p style='font-size: 1.1rem; color: #9CA3AF; max-width: 600px; margin: 0 auto 1.5rem auto;'>
+                BILLSCOPE reviews your monthly expenses, finds better deals, and negotiates lower rates on your behalf. Effortless savings, guaranteed.
+            </p>
+        </div>
+        """, 
+        unsafe_allow_html=True
+    )
     
     # Value Proposition Callout Box
     st.success(
@@ -76,36 +130,48 @@ if st.session_state.app_page == "Home":
     )
 
     st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("### How BILLSCOPE Works")
     
-    # Feature Callouts using 2 columns
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
     with col1:
-        st.markdown("### ⚡ Electricity Benchmarking")
-        st.write("Compare your energy statements against localized QLD regional averages to instantly uncover hidden padding.")
+        st.markdown(
+            """
+            <div class="feature-card">
+                <h4>1. Upload Bills</h4>
+                <p style='font-size: 0.85rem; color: #9CA3AF;'>Securely upload your bills via PDF or quick manual form.</p>
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
     with col2:
-        st.markdown("### 🌐 Broadband & NBN Audit")
-        st.write("Analyze your current speed tier and provider pricing against modern market standards to see if you're getting ripped off.")
+        st.markdown(
+            """
+            <div class="feature-card">
+                <h4>2. We Analyze</h4>
+                <p style='font-size: 0.85rem; color: #9CA3AF;'>Engine scans for savings, pricing padding, and regional discrepancies.</p>
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
+    with col3:
+        st.markdown(
+            """
+            <div class="feature-card">
+                <h4>3. You Save</h4>
+                <p style='font-size: 0.85rem; color: #9CA3AF;'>Get notified of lower rates and approve your real household savings.</p>
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
         
     st.markdown("<br>", unsafe_allow_html=True)
     st.divider()
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # How it works section
-    st.markdown("### 🚀 How BillScope Works")
-    st.markdown(
-        """
-        * **1. Upload or Type:** Drop your PDF bill statement into our parser or enter your postcode and cost manually.
-        * **2. Instant Benchmark Check:** Our algorithm cross-references regional data to expose potential overspending.
-        * **3. Concierge Intervention:** Have our team handle the administrative headache of slashing your rates for you.
-        """
-    )
-    
-    st.markdown("<br>", unsafe_allow_html=True)
-    
     # Centered CTA Button
     col_a, col_b, col_c = st.columns([1, 2, 1])
     with col_b:
-        if st.button("Start Free Bill Audit Now 🚀", type="primary", use_container_width=True):
+        if st.button("Secure My Savings 🚀", type="primary", use_container_width=True):
             st.session_state.app_page = "Instant Bill Auditor"
             st.rerun()
 

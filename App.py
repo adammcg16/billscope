@@ -1,10 +1,12 @@
 import streamlit as st
 import pandas as pd
 import pdfplumber
-import io
+import urllib.parse
 
 # App Config & Branding
 st.set_page_config(page_title="BillScope", page_icon="🔍", layout="centered")
+
+CONCIERGE_EMAIL = "adammcg_16@hotmail.com"
 
 # --- LOAD BENCHMARK DATA FROM EXCEL ---
 @st.cache_data
@@ -22,7 +24,7 @@ except Exception as e:
 
 # --- NAVIGATION SIDEBAR ---
 st.sidebar.title("🔍 BillScope Menu")
-app_page = st.sidebar.radio("Navigation", ["Home", "Instant Bill Auditor", "Terms & Conditions"])
+app_page = st.sidebar.radio("Navigation", ["Home", "Instant Bill Auditor", "Contact Concierge", "Terms & Conditions"])
 
 st.sidebar.divider()
 st.sidebar.caption("© 2026 BillScope. Household Expense Concierge.")
@@ -54,7 +56,7 @@ if app_page == "Home":
     st.markdown("### How it works:")
     st.markdown("1. **Upload or Type:** Drop your PDF bill or enter your postcode and cost.\n"
                 "2. **Instant Check:** Our engine detects if you're paying more than your neighbors.\n"
-                "3. **Let Us Fix It:** Want out of the overpayment? Request our bill reduction concierge service.")
+                "3. **Let Us Fix It:** Click to connect directly with your Living Expense Concierge.")
     
     if st.button("Start Bill Audit Now 🚀", type="primary"):
         st.info("Use the left navigation menu and select **Instant Bill Auditor** to begin!")
@@ -72,8 +74,8 @@ elif app_page == "Instant Bill Auditor":
     category = st.selectbox("Select Bill Type", ["Electricity", "Internet"])
     df = elec_df if category == "Electricity" else net_df
     
-    user_postcode = None
-    current_cost = 0.0
+    user_postcode = 4557
+    current_cost = 150.0
     billing_cycle = "Monthly"
     provider_name = "Unknown"
     
@@ -103,10 +105,7 @@ elif app_page == "Instant Bill Auditor":
                         extracted_text = ""
                         for page in pdf.pages:
                             extracted_text += page.extract_text() or ""
-                    
                     st.success("Bill successfully scanned!")
-                    # Basic placeholder parsing (you can refine keywords later)
-                    st.caption("Extracted text snippet preview available in system.")
                 except Exception as ex:
                     st.warning(f"Could not automatically parse PDF text ({ex}). Please enter cost manually below.")
             
@@ -127,7 +126,7 @@ elif app_page == "Instant Bill Auditor":
             benchmark = match.iloc[0]["benchmark_cost"]
             suggested_provider = match.iloc[0]["provider_example"]
             
-            # Normalize to annual cost for comparison
+            # Normalize to annual cost
             monthly_user = current_cost / 3 if (category == "Electricity" and billing_cycle == "Quarterly") else current_cost
             annual_user_cost = monthly_user * 12
             annual_benchmark_cost = benchmark * 12
@@ -146,29 +145,71 @@ elif app_page == "Instant Bill Auditor":
             if savings > 0:
                 st.error(f"⚠️ **Lazy Tax Detected!** You are paying approximately **${savings:,.2f} more per year** than the regional benchmark.")
                 
-                # CONCIERGE HANDOVER CALL TO ACTION
                 st.markdown("### Want us to slash this bill for you?")
-                st.write("Don't spend hours on hold. Hand this over to our **Household Bill Concierge** service, and we will handle the switch to a cheaper provider on your behalf.")
+                st.write("Click below to email your audit details directly to your Living Expense Concierge.")
                 
-                with st.form("concierge_form"):
-                    st.markdown("#### Request Free Concierge Assistance")
-                    c_name = st.text_input("Your Full Name")
-                    c_phone = st.text_input("Phone Number")
-                    c_email = st.text_input("Email Address")
-                    
-                    submitted = st.form_submit_button("Book My Free Bill Review 🚀")
-                    if submitted:
-                        if c_name and c_email:
-                            st.success(f"Thank you, {c_name}! We have received your audit data and will contact you within 24 hours to help lower your {category.lower()} bills.")
-                        else:
-                            st.warning("Please provide your name and email so we can reach out.")
+                # Generate a secure mailto link with pre-filled details
+                email_subject = urllib.parse.quote(f"Bill Audit Assistance Request - Postcode {user_postcode}")
+                email_body = urllib.parse.quote(
+                    f"Hi Adam,\n\nI ran my {category} bill through BillScope and found potential savings!\n\n"
+                    f"- Postcode: {user_postcode}\n"
+                    f"- Current Provider: {provider_name}\n"
+                    f"- Current Cost: ${current_cost} ({billing_cycle})\n"
+                    f"- Estimated Annual Overspend: ~${savings:,.2f}/yr\n\n"
+                    f"Please help me look into cheaper alternatives."
+                )
+                mailto_url = f"mailto:{CONCIERGE_EMAIL}?subject={email_subject}&body={email_body}"
+                
+                st.markdown(
+                    f'<a href="{mailto_url}" target="_self"><button style="background-color:#FF4B4B; color:white; padding:10px 20px; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">📧 Email Concierge to Fix My Bill</button></a>',
+                    unsafe_allow_html=True
+                )
             else:
                 st.success(f"✅ **Great Job!** Your current rate is competitive and sitting at or below the regional benchmark.")
         else:
             st.warning("⚠️ Postcode not found within current QLD regional tracking ranges. Please double-check your postcode.")
 
 # ==========================================
-# PAGE 2: TERMS & CONDITIONS
+# PAGE 2: CONTACT CONCIERGE (CUSTOM NOTE FORM)
+# ==========================================
+elif app_page == "Contact Concierge":
+    st.title("💬 Living Expense Concierge")
+    st.subheader("Have custom bills or multiple items you want reviewed? Send a note directly.")
+    
+    st.write("Fill out the details below and click send to open your email client with your message pre-loaded for Adam.")
+    
+    with st.form("custom_concierge_form"):
+        client_name = st.text_input("Your Name")
+        client_phone = st.text_input("Phone Number")
+        client_email = st.text_input("Your Email Address")
+        bill_types = st.multiselect("What bills do you want help with?", ["Electricity", "Internet / NBN", "Mobile Phone", "Insurance", "Streaming / Subscriptions", "Other"])
+        notes = st.text_area("Custom Note / Details", placeholder="e.g., My energy bill just jumped up and I want to see if I can switch to a cheaper provider.")
+        
+        submitted = st.form_submit_button("Generate & Send Email to Concierge 🚀")
+        
+        if submitted:
+            if client_name and notes:
+                subject = urllib.parse.quote(f"Custom Concierge Request from {client_name}")
+                body = urllib.parse.quote(
+                    f"Hi Adam,\n\nI would like help with my household expenses.\n\n"
+                    f"Name: {client_name}\n"
+                    f"Phone: {client_phone}\n"
+                    f"Email: {client_email}\n"
+                    f"Bills to review: {', '.join(bill_types)}\n\n"
+                    f"Notes:\n{notes}"
+                )
+                custom_mailto = f"mailto:{CONCIERGE_EMAIL}?subject={subject}&body={body}"
+                
+                st.success("Ready! Click the button below to launch your email client and send your request:")
+                st.markdown(
+                    f'<a href="{custom_mailto}" target="_self"><button style="background-color:#0083B8; color:white; padding:10px 20px; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">📬 Open Email Client & Send</button></a>',
+                    unsafe_allow_html=True
+                )
+            else:
+                st.warning("Please provide at least your name and some notes before submitting.")
+
+# ==========================================
+# PAGE 3: TERMS & CONDITIONS
 # ==========================================
 elif app_page == "Terms & Conditions":
     st.title("⚖️ Terms of Service & Disclaimers")

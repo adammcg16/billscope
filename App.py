@@ -1,13 +1,39 @@
 import streamlit as st
 import pandas as pd
 import pdfplumber
-import requests
+import json
 
 # App Config & Branding
 st.set_page_config(page_title="BillScope", page_icon="🔍", layout="centered")
 
 # --- CONFIGURED FORMSPREE ENDPOINT URL ---
 FORMSPREE_URL = "https://formspree.io/f/xyegwaek"
+
+# --- BROWSER-SIDE FORMSPREE HELPER ---
+def submit_to_formspree(form_data):
+    """Injects JS to post form data directly from the user's browser to Formspree."""
+    data_json = json.dumps(form_data)
+    js_code = f"""
+    <script>
+    fetch("{FORMSPREE_URL}", {{
+        method: "POST",
+        headers: {{
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+        }},
+        body: {data_json}
+    }}).then(response => {{
+        if (response.ok) {{
+            console.log("Form successfully submitted to Formspree");
+        }} else {{
+            console.error("Formspree submission failed");
+        }}
+    }}).catch(error => {{
+        console.error("Error:", error);
+    }});
+    </script>
+    """
+    st.components.v1.html(js_code, height=0, width=0)
 
 # --- LOAD BENCHMARK DATA FROM EXCEL ---
 @st.cache_data
@@ -219,16 +245,9 @@ elif st.session_state.app_page == "Instant Bill Auditor":
                                 "_subject": f"New BillScope Lead: {client_name} (Postcode {user_postcode})"
                             }
                             
-                            headers = {"Accept": "application/json"}
-                            
-                            try:
-                                response = requests.post(FORMSPREE_URL, data=payload, headers=headers)
-                                if response.status_code in [200, 201]:
-                                    st.success("🎉 Success! Your request has been emailed directly to your living expense concierge. We will be in touch shortly.")
-                                else:
-                                    st.error(f"⚠️ Error sending request (Code {response.status_code}): {response.text}")
-                            except Exception as ex:
-                                st.error(f"Connection error: {ex}")
+                            # Trigger browser-side fetch request
+                            submit_to_formspree(payload)
+                            st.success("🎉 Success! Your request has been emailed directly to your living expense concierge. We will be in touch shortly.")
                         else:
                             st.warning("Please fill in your Name, Mobile, and Email address so we can contact you.")
             else:
@@ -263,16 +282,9 @@ elif st.session_state.app_page == "Contact Concierge":
                     "_subject": f"General BillScope Inquiry from {client_name}"
                 }
                 
-                headers = {"Accept": "application/json"}
-                
-                try:
-                    response = requests.post(FORMSPREE_URL, data=payload, headers=headers)
-                    if response.status_code in [200, 201]:
-                        st.success("🎉 Success! Your enquiry has been sent straight to your living expense concierge.")
-                    else:
-                        st.error(f"⚠️ Error sending request (Code {response.status_code}): {response.text}")
-                except Exception as ex:
-                    st.error(f"Connection error: {ex}")
+                # Trigger browser-side fetch request
+                submit_to_formspree(payload)
+                st.success("🎉 Success! Your enquiry has been sent straight to your living expense concierge.")
             else:
                 st.warning("Please fill in your Name, Mobile, and Notes before submitting.")
 

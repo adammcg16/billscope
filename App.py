@@ -279,7 +279,7 @@ elif st.session_state.app_page == "Contact Concierge":
 # ==========================================
 # PAGE 3: TERMS & CONDITIONS
 # ==========================================
-elif app_page == "Terms & Conditions":
+elif st.session_state.app_page == "Terms & Conditions":
     st.title("⚖️ Terms of Service & Disclaimers")
     st.markdown("""
     ### 1. General Information Only

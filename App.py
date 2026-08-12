@@ -75,18 +75,14 @@ st.markdown("""
         text-align: center;
         height: 100%;
     }
-    .metric-card {
-        background-color: #111827;
-        border: 1px solid #374151;
-        padding: 1rem;
-        border-radius: 10px;
-        text-align: center;
-    }
     </style>
 """, unsafe_allow_html=True)
 
-# --- NAVIGATION SIDEBAR ---
-st.sidebar.title("🔍 BillScope Menu")
+# --- NAVIGATION SIDEBAR WITH LOGO ---
+try:
+    st.sidebar.image("logo.png", use_container_width=True)
+except Exception:
+    st.sidebar.title("🔍 BillScope")
 
 pages = ["Home", "Instant Bill Auditor", "Contact Concierge", "Terms & Conditions"]
 
@@ -108,11 +104,19 @@ st.sidebar.caption("© 2026 BillScope. Household Expense Concierge.")
 if st.session_state.app_page == "Home":
     st.markdown("<br>", unsafe_allow_html=True)
     
+    # Display Logo Centered in Hero Section
+    try:
+        col_img1, col_img2, col_img3 = st.columns([1, 2, 1])
+        with col_img2:
+            st.image("logo.png", use_container_width=True)
+    except Exception:
+        pass
+
     # Hero Section Styled to match reference design
     st.markdown(
         """
         <div class="hero-container">
-            <h1 style='font-size: 2.5rem; font-weight: 800; letter-spacing: -0.025em; margin-bottom: 1rem;'>
+            <h1 style='font-size: 2.2rem; font-weight: 800; letter-spacing: -0.025em; margin-bottom: 1rem;'>
                 Take Control of Your Bills & <br><span style='color: #3B82F6;'>Start Saving Money Instantly.</span>
             </h1>
             <p style='font-size: 1.1rem; color: #9CA3AF; max-width: 600px; margin: 0 auto 1.5rem auto;'>

@@ -1,10 +1,14 @@
 import streamlit as st
 import pandas as pd
 import pdfplumber
-import urllib.parse
+import requests
 
 # App Config & Branding
 st.set_page_config(page_title="BillScope", page_icon="🔍", layout="centered")
+
+# --- WEB3FORMS CONFIGURATION ---
+WEB3FORMS_KEY = "b8a45f35-c35f-4d8f-b0ca-318daace3bfb"
+WEB3FORMS_URL = "https://api.web3forms.com/submit"
 
 # --- LOAD BENCHMARK DATA FROM EXCEL ---
 @st.cache_data
@@ -189,7 +193,7 @@ elif st.session_state.app_page == "Instant Bill Auditor":
                 st.error(f"⚠️ **Lazy Tax Detected!** You are paying approximately **${savings:,.2f} more per year** than the regional benchmark.")
                 
                 st.markdown("### Want us to slash this bill for you?")
-                st.write("Fill out your details below to dispatch your audit request directly to your living expense concierge.")
+                st.write("Fill out your details below to send your audit request straight to your living expense concierge.")
                 
                 with st.form("audit_enquiry_form"):
                     client_name = st.text_input("Your Full Name")
@@ -197,36 +201,36 @@ elif st.session_state.app_page == "Instant Bill Auditor":
                     client_email = st.text_input("Email Address")
                     user_notes = st.text_area("Notes / What you want reviewed", value=f"Please help me review my {category} bill. Current cost is ${current_cost} with {provider_name}.")
                     
-                    submitted = st.form_submit_button("Generate Concierge Request Email 🚀")
+                    submitted = st.form_submit_button("Send Request to Your Living Expense Concierge 🚀")
                     
                     if submitted:
                         if client_name and client_mobile and client_email:
-                            email_subject = f"New BillScope Lead: {client_name} (Postcode {user_postcode})"
-                            email_body = (
-                                f"Hi Living Expense Concierge,\n\n"
-                                f"A new audit request has been submitted through BillScope:\n\n"
-                                f"--- Client Details ---\n"
-                                f"Name: {client_name}\n"
-                                f"Mobile: {client_mobile}\n"
-                                f"Email: {client_email}\n\n"
-                                f"--- Audit Information ---\n"
-                                f"Bill Type: {category}\n"
-                                f"Postcode: {user_postcode}\n"
-                                f"Provider: {provider_name}\n"
-                                f"NBN Tier: {nbn_tier if category == 'Internet' else 'N/A'}\n"
-                                f"Current Cost: ${current_cost}\n"
-                                f"Estimated Savings: ${savings:,.2f}/yr\n\n"
-                                f"--- Client Notes ---\n"
-                                f"{user_notes}"
-                            )
+                            payload = {
+                                "access_key": WEB3FORMS_KEY,
+                                "subject": f"New BillScope Lead: {client_name} (Postcode {user_postcode})",
+                                "name": client_name,
+                                "email": client_email,
+                                "mobile": client_mobile,
+                                "bill_type": category,
+                                "postcode": user_postcode,
+                                "provider": provider_name,
+                                "nbn_tier": nbn_tier if category == "Internet" else "N/A",
+                                "current_cost": f"${current_cost}",
+                                "estimated_savings": f"${savings:,.2f}/yr",
+                                "message": user_notes
+                            }
                             
-                            # Construct mailto link safely
-                            mailto_url = f"mailto:adammcg_16@hotmail.com?subject={urllib.parse.quote(email_subject)}&body={urllib.parse.quote(email_body)}"
-                            
-                            st.success("✅ Request generated successfully! Click the button below to send it straight to your concierge inbox:")
-                            st.markdown(f'<a href="{mailto_url}" target="_blank"><button style="background-color:#FF4B4B; color:white; padding:10px 20px; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">📧 Send Email Now</button></a>', unsafe_allow_html=True)
+                            try:
+                                response = requests.post(WEB3FORMS_URL, json=payload)
+                                result = response.json()
+                                if result.get("success"):
+                                    st.success("🎉 Success! Your request has been emailed directly to your living expense concierge. We will be in touch shortly.")
+                                else:
+                                    st.error(f"⚠️ Error sending request: {result.get('message', 'Unknown error')}")
+                            except Exception as ex:
+                                st.error(f"Connection error: {ex}")
                         else:
-                            st.warning("Please fill in your Name, Mobile, and Email address before generating the request.")
+                            st.warning("Please fill in your Name, Mobile, and Email address so we can contact you.")
             else:
                 st.success(f"✅ **Great Job!** Your current rate is competitive and sitting at or below the regional benchmark.")
         else:
@@ -246,24 +250,29 @@ elif st.session_state.app_page == "Contact Concierge":
         bill_types = st.multiselect("What bills do you want help with?", ["Electricity", "Internet / NBN", "Mobile Phone", "Insurance", "Streaming / Subscriptions", "Other"])
         notes = st.text_area("Notes / Details", placeholder="e.g., My energy and internet bills are too high, please help me review them.")
         
-        submitted = st.form_submit_button("Generate General Enquiry Email 🚀")
+        submitted = st.form_submit_button("Send General Enquiry 🚀")
         
         if submitted:
             if client_name and client_mobile and notes:
-                email_subject = f"General BillScope Inquiry from {client_name}"
-                email_body = (
-                    f"Hi Living Expense Concierge,\n\n"
-                    f"Name: {client_name}\n"
-                    f"Mobile: {client_mobile}\n"
-                    f"Email: {client_email}\n"
-                    f"Target Bills: {', '.join(bill_types)}\n\n"
-                    f"Notes:\n{notes}"
-                )
+                payload = {
+                    "access_key": WEB3FORMS_KEY,
+                    "subject": f"General BillScope Inquiry from {client_name}",
+                    "name": client_name,
+                    "email": client_email,
+                    "mobile": client_mobile,
+                    "bill_types": ", ".join(bill_types),
+                    "message": notes
+                }
                 
-                mailto_url = f"mailto:adammcg_16@hotmail.com?subject={urllib.parse.quote(email_subject)}&body={urllib.parse.quote(email_body)}"
-                
-                st.success("✅ Enquiry generated! Click the button below to send it directly:")
-                st.markdown(f'<a href="{mailto_url}" target="_blank"><button style="background-color:#FF4B4B; color:white; padding:10px 20px; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">📧 Send Email Now</button></a>', unsafe_allow_html=True)
+                try:
+                    response = requests.post(WEB3FORMS_URL, json=payload)
+                    result = response.json()
+                    if result.get("success"):
+                        st.success("🎉 Success! Your enquiry has been sent straight to your living expense concierge.")
+                    else:
+                        st.error(f"⚠️ Error sending request: {result.get('message', 'Unknown error')}")
+                except Exception as ex:
+                    st.error(f"Connection error: {ex}")
             else:
                 st.warning("Please fill in your Name, Mobile, and Notes before submitting.")
 

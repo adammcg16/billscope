@@ -1,38 +1,28 @@
 import streamlit as st
 import pandas as pd
 import pdfplumber
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import resend
 
 # App Config & Branding
 st.set_page_config(page_title="BillScope", page_icon="🔍", layout="centered")
 
-# --- SMTP EMAIL CONFIGURATION ---
-SMTP_SERVER = "smtp.gmail.com"
-SMTP_PORT = 587
-SENDER_EMAIL = "billscope.enquiries@gmail.com"
-# Note: Ensure you use your 16-character Google App Password here if 2FA is enabled on the Gmail account
-SENDER_PASSWORD = "mignej-cydKud-xexsu5" 
-RECEIVER_EMAIL = "adammcg_16@hotmail.com"
+# --- RESEND API CONFIGURATION (Using Streamlit Secrets) ---
+resend.api_key = st.secrets["resend_api_key"]
+RECEIVER_EMAIL = "billscope.enquiries@gmail.com"
 
-def send_smtp_email(subject, body):
-    """Sends an email notification directly to your Hotmail inbox using SMTP."""
-    msg = MIMEMultipart()
-    msg['From'] = SENDER_EMAIL
-    msg['To'] = RECEIVER_EMAIL
-    msg['Subject'] = subject
-    msg.attach(MIMEText(body, 'plain'))
-
+def send_resend_email(subject, body):
+    """Sends an email notification directly via Resend API to your Gmail inbox."""
     try:
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-        server.starttls()
-        server.login(SENDER_EMAIL, SENDER_PASSWORD)
-        server.sendmail(SENDER_EMAIL, RECEIVER_EMAIL, msg.as_string())
-        server.quit()
+        params = {
+            "from": "BillScope <onboarding@resend.dev>", # Use onboarding@resend.dev for testing without domain verification
+            "to": [RECEIVER_EMAIL],
+            "subject": subject,
+            "text": body,
+        }
+        email = resend.Emails.send(params)
         return True
     except Exception as e:
-        st.error(f"SMTP Error: {e}")
+        st.error(f"Email Dispatch Error: {e}")
         return False
 
 # --- LOAD BENCHMARK DATA FROM EXCEL ---
@@ -249,9 +239,9 @@ elif st.session_state.app_page == "Instant Bill Auditor":
                             )
                             
                             with st.spinner("Dispatching email..."):
-                                success = send_smtp_email(email_subject, email_body)
+                                success = send_resend_email(email_subject, email_body)
                                 if success:
-                                    st.success("🎉 Success! Your request has been sent straight to your Hotmail inbox.")
+                                    st.success("🎉 Success! Your request has been sent straight to your Gmail inbox.")
                         else:
                             st.warning("Please fill in your Name, Mobile, and Email address.")
             else:
@@ -287,9 +277,9 @@ elif st.session_state.app_page == "Contact Concierge":
                 )
                 
                 with st.spinner("Dispatching email..."):
-                    success = send_smtp_email(email_subject, email_body)
+                    success = send_resend_email(email_subject, email_body)
                     if success:
-                        st.success("🎉 Success! Your enquiry has been sent straight to your Hotmail inbox.")
+                        st.success("🎉 Success! Your enquiry has been sent straight to your Gmail inbox.")
             else:
                 st.warning("Please fill in your Name, Mobile, and Notes before submitting.")
 

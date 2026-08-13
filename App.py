@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import pdfplumber
 import resend
 import base64
 
@@ -180,8 +179,8 @@ if st.session_state.app_page == "Home":
         st.markdown(
             """
             <div class="feature-card">
-                <h4>1. Upload Bills</h4>
-                <p style='font-size: 0.85rem; color: #475569;'>Securely upload your bills via PDF or quick manual form.</p>
+                <h4>1. Enter Details</h4>
+                <p style='font-size: 0.85rem; color: #475569;'>Quickly input your bill details and postcode via our simple form.</p>
             </div>
             """, 
             unsafe_allow_html=True
@@ -223,10 +222,8 @@ if st.session_state.app_page == "Home":
 elif st.session_state.app_page == "Instant Bill Auditor":
     render_top_logo()
     st.title("⚡ Household Bill Auditor")
-    st.subheader("Upload your bill or enter details to uncover potential savings.")
+    st.subheader("Enter your details below to uncover potential savings against regional benchmarks.")
 
-    input_method = st.radio("Choose Input Method", ["Quick Manual Entry", "Upload Bill (PDF)"], horizontal=True)
-    
     category = st.selectbox("Select Bill Type", ["Electricity", "Internet"])
     
     user_postcode = 4000
@@ -242,54 +239,24 @@ elif st.session_state.app_page == "Instant Bill Auditor":
     
     nbn_tiers = ["NBN 25", "NBN 50", "NBN 100", "NBN 250", "NBN 500", "NBN 750", "NBN 1000"]
     
-    if input_method == "Quick Manual Entry":
-        st.markdown("#### Enter Bill Details")
-        col1, col2 = st.columns(2)
-        with col1:
-            user_postcode = st.number_input("Your Postcode", min_value=1000, max_value=9999, value=4000, step=1)
-            
-            if category == "Internet":
-                provider_name = st.selectbox("Current Internet Provider", internet_providers)
-                nbn_tier = st.selectbox("NBN Speed Tier", nbn_tiers)
-            else:
-                provider_name = st.text_input("Current Provider", "e.g. Origin, AGL")
-                
-        with col2:
-            if category == "Electricity":
-                billing_cycle = st.selectbox("Billing Cycle", ["Monthly", "Quarterly"])
-                current_cost = st.number_input("Current Cost ($)", min_value=0.0, value=150.0, step=5.0)
-            else:
-                billing_cycle = "Monthly"
-                current_cost = st.number_input("Current Cost per Month ($)", min_value=0.0, value=85.0, step=5.0)
-
-    else:
-        st.markdown("#### Upload PDF Bill")
-        uploaded_file = st.file_uploader("Upload your recent bill statement", type=["pdf"])
-        
-        user_postcode = st.number_input("Confirm Your Postcode", min_value=1000, max_value=9999, value=4000, step=1)
+    st.markdown("#### Enter Bill Details")
+    col1, col2 = st.columns(2)
+    with col1:
+        user_postcode = st.number_input("Your Postcode", min_value=1000, max_value=9999, value=4000, step=1)
         
         if category == "Internet":
-            provider_name = st.selectbox("Confirm Internet Provider", internet_providers)
-            nbn_tier = st.selectbox("Confirm NBN Speed Tier", nbn_tiers)
-        
-        if uploaded_file is not None:
-            with st.spinner("Reading bill details..."):
-                try:
-                    with pdfplumber.open(uploaded_file) as pdf:
-                        extracted_text = ""
-                        for page in pdf.pages:
-                            extracted_text += page.extract_text() or ""
-                    st.success("Bill successfully scanned!")
-                except Exception as ex:
-                    st.warning(f"Could not automatically parse PDF text ({ex}). Please enter cost manually below.")
-            
-            if category == "Electricity":
-                billing_cycle = st.selectbox("Billing Cycle", ["Monthly", "Quarterly"])
-                current_cost = st.number_input("Confirmed Bill Cost ($ from statement)", min_value=0.0, value=200.0, step=5.0)
-            else:
-                current_cost = st.number_input("Confirmed Cost per Month ($ from statement)", min_value=0.0, value=85.0, step=5.0)
+            provider_name = st.selectbox("Current Internet Provider", internet_providers)
+            nbn_tier = st.selectbox("NBN Speed Tier", nbn_tiers)
         else:
-            st.info("Please upload a PDF file to begin extraction.")
+            provider_name = st.text_input("Current Provider", "e.g. Origin, AGL")
+            
+    with col2:
+        if category == "Electricity":
+            billing_cycle = st.selectbox("Billing Cycle", ["Monthly", "Quarterly"])
+            current_cost = st.number_input("Current Cost ($)", min_value=0.0, value=150.0, step=5.0)
+        else:
+            billing_cycle = "Monthly"
+            current_cost = st.number_input("Current Cost per Month ($)", min_value=0.0, value=85.0, step=5.0)
 
     st.divider()
 
@@ -326,12 +293,11 @@ elif st.session_state.app_page == "Instant Bill Auditor":
                 region_name = match.iloc[0]["region"]
                 rec_provider = match.iloc[0]["top_provider"]
                 
-                # Dynamically map selected tier to spreadsheet column name (e.g. 'NBN 50' -> 'nbn_50_cost')
                 tier_col = nbn_tier.lower().replace(" ", "_") + "_cost"
                 if tier_col in match.columns and pd.notna(match.iloc[0][tier_col]):
                     benchmark_monthly = match.iloc[0][tier_col]
                 else:
-                    benchmark_monthly = match.iloc[0]["nbn_50_cost"] # Fallback to NBN 50
+                    benchmark_monthly = match.iloc[0]["nbn_50_cost"]
                 
                 st.session_state.audited_savings = (monthly_user * 12) - (benchmark_monthly * 12)
                 st.session_state.audited_user_cost = monthly_user * 12

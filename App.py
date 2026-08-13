@@ -8,7 +8,11 @@ import base64
 st.set_page_config(page_title="BillScope", page_icon="🔍", layout="centered")
 
 # --- RESEND API CONFIGURATION (Using Streamlit Secrets) ---
-resend.api_key = st.secrets["resend_api_key"]
+try:
+    resend.api_key = st.secrets["resend_api_key"]
+except Exception:
+    resend.api_key = ""
+
 RECEIVER_EMAIL = "adammcg_16@hotmail.com"
 
 def send_resend_email(subject, body):
@@ -32,6 +36,11 @@ def load_data():
     file_path = "billscope_tabs.xlsx"
     electricity = pd.read_excel(file_path, sheet_name="Electricity")
     internet = pd.read_excel(file_path, sheet_name="Internet")
+    
+    # Strip whitespace from column names to guarantee reliable matching
+    electricity.columns = electricity.columns.str.strip()
+    internet.columns = internet.columns.str.strip()
+    
     return electricity, internet
 
 try:
@@ -219,9 +228,8 @@ elif st.session_state.app_page == "Instant Bill Auditor":
     input_method = st.radio("Choose Input Method", ["Quick Manual Entry", "Upload Bill (PDF)"], horizontal=True)
     
     category = st.selectbox("Select Bill Type", ["Electricity", "Internet"])
-    df = elec_df if category == "Electricity" else net_df
     
-    user_postcode = 4557
+    user_postcode = 4000
     current_cost = 150.0
     billing_cycle = "Monthly"
     provider_name = "Unknown"
@@ -232,16 +240,13 @@ elif st.session_state.app_page == "Instant Bill Auditor":
         "Vodafone", "Dodo", "iPrimus", "Exetel", "Leaptel", "AGL Energy", "Other"
     ]
     
-    nbn_tiers = [
-        "NBN 12", "NBN 25", "NBN 50", "NBN 100", 
-        "NBN 250", "NBN 500", "NBN 1000", "NBN 2000"
-    ]
+    nbn_tiers = ["NBN 25", "NBN 50", "NBN 100", "NBN 250", "NBN 500", "NBN 750", "NBN 1000"]
     
     if input_method == "Quick Manual Entry":
         st.markdown("#### Enter Bill Details")
         col1, col2 = st.columns(2)
         with col1:
-            user_postcode = st.number_input("Your Postcode", min_value=1000, max_value=9999, value=4557, step=1)
+            user_postcode = st.number_input("Your Postcode", min_value=1000, max_value=9999, value=4000, step=1)
             
             if category == "Internet":
                 provider_name = st.selectbox("Current Internet Provider", internet_providers)
@@ -261,7 +266,7 @@ elif st.session_state.app_page == "Instant Bill Auditor":
         st.markdown("#### Upload PDF Bill")
         uploaded_file = st.file_uploader("Upload your recent bill statement", type=["pdf"])
         
-        user_postcode = st.number_input("Confirm Your Postcode", min_value=1000, max_value=9999, value=4557, step=1)
+        user_postcode = st.number_input("Confirm Your Postcode", min_value=1000, max_value=9999, value=4000, step=1)
         
         if category == "Internet":
             provider_name = st.selectbox("Confirm Internet Provider", internet_providers)
@@ -299,25 +304,50 @@ elif st.session_state.app_page == "Instant Bill Auditor":
         st.session_state.audited_nbn_tier = nbn_tier
         st.session_state.audited_current_cost = current_cost
         
-        match = df[(df["postcode_start"] <= user_postcode) & (df["postcode_end"] >= user_postcode)]
-        if not match.empty:
-            region_name = match.iloc[0]["region"]
-            benchmark = match.iloc[0]["benchmark_cost"]
-            monthly_user = current_cost / 3 if (category == "Electricity" and billing_cycle == "Quarterly") else current_cost
-            st.session_state.audited_savings = (monthly_user * 12) - (benchmark * 12)
-            st.session_state.audited_user_cost = monthly_user * 12
-            st.session_state.audited_benchmark_cost = benchmark * 12
-            st.session_state.audited_region = region_name
-        else:
-            st.session_state.audited_savings = None
+        monthly_user = current_cost / 3 if (category == "Electricity" and billing_cycle == "Quarterly") else current_cost
+        
+        if category == "Electricity":
+            match = elec_df[(elec_df["postcode start"] <= user_postcode) & (elec_df["postcode end"] >= user_postcode)]
+            if not match.empty:
+                region_name = match.iloc[0]["region"]
+                benchmark_monthly = match.iloc[0]["benchmark_cost"]
+                rec_provider = match.iloc[0]["top_provider"]
+                
+                st.session_state.audited_savings = (monthly_user * 12) - (benchmark_monthly * 12)
+                st.session_state.audited_user_cost = monthly_user * 12
+                st.session_state.audited_benchmark_cost = benchmark_monthly * 12
+                st.session_state.audited_region = region_name
+                st.session_state.audited_top_provider = rec_provider
+            else:
+                st.session_state.audited_savings = None
+        else:  # Internet
+            match = net_df[(net_df["postcode start"] <= user_postcode) & (net_df["postcode end"] >= user_postcode)]
+            if not match.empty:
+                region_name = match.iloc[0]["region"]
+                rec_provider = match.iloc[0]["top_provider"]
+                
+                # Dynamically map selected tier to spreadsheet column name (e.g. 'NBN 50' -> 'nbn_50_cost')
+                tier_col = nbn_tier.lower().replace(" ", "_") + "_cost"
+                if tier_col in match.columns and pd.notna(match.iloc[0][tier_col]):
+                    benchmark_monthly = match.iloc[0][tier_col]
+                else:
+                    benchmark_monthly = match.iloc[0]["nbn_50_cost"] # Fallback to NBN 50
+                
+                st.session_state.audited_savings = (monthly_user * 12) - (benchmark_monthly * 12)
+                st.session_state.audited_user_cost = monthly_user * 12
+                st.session_state.audited_benchmark_cost = benchmark_monthly * 12
+                st.session_state.audited_region = region_name
+                st.session_state.audited_top_provider = rec_provider
+            else:
+                st.session_state.audited_savings = None
 
     if st.session_state.audit_run:
         if st.session_state.audited_savings is not None:
             st.subheader(f"📊 Audit Results for Postcode {st.session_state.audited_postcode}")
             if st.session_state.audited_category == "Internet":
-                st.caption(f"Matched Region: **{st.session_state.audited_region}** | Provider: **{st.session_state.audited_provider}** | Tier: **{st.session_state.audited_nbn_tier}**")
+                st.caption(f"Matched Region: **{st.session_state.audited_region}** | Tier: **{st.session_state.audited_nbn_tier}** | Recommended Local Provider: **{st.session_state.audited_top_provider}**")
             else:
-                st.caption(f"Matched Region: **{st.session_state.audited_region}** | Provider: **{st.session_state.audited_provider}**")
+                st.caption(f"Matched Region: **{st.session_state.audited_region}** | Recommended Local Provider: **{st.session_state.audited_top_provider}**")
             
             col1, col2 = st.columns(2)
             col1.metric("Your Estimated Annual Cost", f"${st.session_state.audited_user_cost:,.2f}")
@@ -327,6 +357,7 @@ elif st.session_state.app_page == "Instant Bill Auditor":
             
             if st.session_state.audited_savings > 0:
                 st.error(f"⚠️ **Lazy Tax Detected!** You are paying approximately **${st.session_state.audited_savings:,.2f} more per year** than the regional benchmark.")
+                st.info(f"💡 **Local Expert Insight:** In your region, top households switch to **{st.session_state.audited_top_provider}** for better rates.")
                 
                 st.markdown("### Want us to slash this bill for you?")
                 st.write("Fill out your details below to send your audit request straight to your living expense concierge.")
@@ -354,7 +385,8 @@ elif st.session_state.app_page == "Instant Bill Auditor":
                                 f"Provider: {st.session_state.audited_provider}\n"
                                 f"NBN Tier: {st.session_state.audited_nbn_tier if st.session_state.audited_category == 'Internet' else 'N/A'}\n"
                                 f"Current Cost: ${st.session_state.audited_current_cost}\n"
-                                f"Estimated Savings: ${st.session_state.audited_savings:,.2f}/yr\n\n"
+                                f"Estimated Savings: ${st.session_state.audited_savings:,.2f}/yr\n"
+                                f"Recommended Provider: {st.session_state.audited_top_provider}\n\n"
                                 f"--- Client Notes ---\n"
                                 f"{user_notes}"
                             )

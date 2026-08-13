@@ -81,14 +81,27 @@ st.markdown("""
         color: #334155 !important;
     }
     
-    /* Updated input fields: pure white background with a thin black outline */
-    .stTextInput input, .stSelectbox select, .stNumberInput input, .stTextArea textarea {
+    /* Comprehensive targeting for text inputs, numbers, textareas, and selectboxes (dropdowns) */
+    .stTextInput input, 
+    .stNumberInput input, 
+    .stTextArea textarea, 
+    div[data-baseweb="select"] > div {
         background-color: #FFFFFF !important;
         border: 1px solid #000000 !important;
         border-radius: 4px !important;
         color: #1E293B !important;
     }
-    .stTextInput input:focus, .stSelectbox select:focus, .stNumberInput input:focus, .stTextArea textarea:focus {
+    
+    /* Target dropdown arrow/text container specifically */
+    div[data-baseweb="select"] div {
+        background-color: #FFFFFF !important;
+        color: #1E293B !important;
+    }
+
+    .stTextInput input:focus, 
+    .stNumberInput input:focus, 
+    .stTextArea textarea:focus, 
+    div[data-baseweb="select"] > div:focus-within {
         background-color: #FFFFFF !important;
         border-color: #000000 !important;
         box-shadow: 0 0 0 1px #000000 !important;

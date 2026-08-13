@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import io
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
@@ -64,7 +63,6 @@ if st.sidebar.button("Run Savings Analysis 🔍", type="primary"):
         else:  # Internet
             match = net_df[(net_df["postcode start"] <= user_postcode) & (net_df["postcode end"] >= user_postcode)]
             if not match.empty:
-                # Map selected tier string to match column names (e.g. 'NBN 50' -> 'nbn_50_cost')
                 tier_col = nbn_tier.lower().replace(" ", "_") + "_cost"
                 if tier_col in match.columns:
                     benchmark = match.iloc[0][tier_col]

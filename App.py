@@ -1,423 +1,97 @@
 import streamlit as st
 import pandas as pd
-import pdfplumber
-import resend
-import base64
+import io
 
-# App Config & Branding
-st.set_page_config(page_title="BillScope", page_icon="🔍", layout="centered")
+# --- PAGE CONFIGURATION ---
+st.set_page_config(
+    page_title="BillScope App",
+    page_icon="⚡",
+    layout="centered"
+)
 
-# --- RESEND API CONFIGURATION (Using Streamlit Secrets) ---
-resend.api_key = st.secrets["resend_api_key"]
-RECEIVER_EMAIL = "adammcg_16@hotmail.com"
-
-def send_resend_email(subject, body):
-    """Sends an email notification directly via Resend API to your verified inbox."""
-    try:
-        params = {
-            "from": "BillScope <onboarding@resend.dev>", 
-            "to": [RECEIVER_EMAIL],
-            "subject": subject,
-            "text": body,
-        }
-        resend.Emails.send(params)
-        return True
-    except Exception as e:
-        st.error(f"Email Dispatch Error: {e}")
-        return False
-
-# --- LOAD BENCHMARK DATA FROM EXCEL ---
+# --- LOAD BENCHMARK DATA ---
 @st.cache_data
 def load_data():
     file_path = "billscope_tabs.xlsx"
-    electricity = pd.read_excel(file_path, sheet_name="Electricity")
-    internet = pd.read_excel(file_path, sheet_name="Internet")
-    return electricity, internet
-
-try:
-    elec_df, net_df = load_data()
-except Exception as e:
-    st.error(f"Error loading Excel file: {e}. Please ensure 'billscope_tabs.xlsx' is uploaded to your GitHub repository.")
-    st.stop()
-
-# --- NAVIGATION SESSION STATE MANAGEMENT ---
-if "app_page" not in st.session_state:
-    st.session_state.app_page = "Home"
-
-# --- CUSTOM CSS FOR MATCHING LOGO BACKGROUND COLOUR ---
-st.markdown("""
-    <style>
-    /* Main App Background matched to logo's soft grey tone */
-    .stApp {
-        background-color: #F1F3F4;
-        color: #1F2937;
-    }
-    
-    /* Clean Sidebar Styling */
-    [data-testid="stSidebar"] {
-        background-color: #E8ECEE !important;
-        border-right: 1px solid #D1D5DB;
-    }
-    [data-testid="stSidebar"] .stRadio label p {
-        color: #1F2937 !important;
-        font-weight: 500;
-    }
-    [data-testid="stSidebar"] span, [data-testid="stSidebar"] div, [data-testid="stSidebar"] caption {
-        color: #4B5563 !important;
-    }
-
-    h1, h2, h3 {
-        color: #0F172A !important;
-    }
-    p, label, span {
-        color: #334155 !important;
-    }
-    .hero-container {
-        padding: 2rem 1rem;
-        background: linear-gradient(135deg, #E2E8F0 0%, #F1F3F4 100%);
-        border: 1px solid #D1D5DB;
-        border-radius: 16px;
-        text-align: center;
-        margin-bottom: 2rem;
-    }
-    .feature-card {
-        background-color: #FFFFFF;
-        border: 1px solid #D1D5DB;
-        padding: 1.5rem;
-        border-radius: 12px;
-        text-align: center;
-        height: 100%;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-# --- LOGO HELPER ---
-def render_top_logo():
     try:
-        with open("logo.png", "rb") as image_file:
-            encoded_string = base64.b64encode(image_file.read()).decode()
+        electricity = pd.read_excel(file_path, sheet_name="Electricity")
+        internet = pd.read_excel(file_path, sheet_name="Internet")
         
-        st.markdown(
-            f"""
-            <div style="text-align: center; margin-bottom: 1.5rem; max-width: 320px; margin-left: auto; margin-right: auto;">
-                <img src="data:image/png;base64,{encoded_string}" style="max-width: 100%; height: auto;" />
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-    except Exception:
-        st.markdown("<h2 style='text-align: center; color: #2563EB;'>🔍 BILLSCOPE</h2>", unsafe_allow_html=True)
-
-# --- NAVIGATION SIDEBAR ---
-try:
-    with open("logo.png", "rb") as image_file:
-        encoded_sidebar_logo = base64.b64encode(image_file.read()).decode()
-    st.sidebar.markdown(
-        f"""
-        <div style="text-align: center; margin-bottom: 1rem;">
-            <img src="data:image/png;base64,{encoded_sidebar_logo}" style="max-width: 100%; height: auto;" />
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-except Exception:
-    st.sidebar.title("🔍 BillScope")
-
-pages = ["Home", "Instant Bill Auditor", "Contact Concierge", "Terms & Conditions"]
-
-selected_page = st.sidebar.radio(
-    "Navigation", 
-    pages, 
-    index=pages.index(st.session_state.app_page)
-)
-
-if selected_page != st.session_state.app_page:
-    st.session_state.app_page = selected_page
-
-st.sidebar.divider()
-st.sidebar.caption("© 2026 BillScope. Household Expense Concierge.")
-
-# ==========================================
-# PAGE 0: HOME / LANDING PAGE
-# ==========================================
-if st.session_state.app_page == "Home":
-    render_top_logo()
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    st.markdown(
-        """
-        <div class="hero-container">
-            <h1 style='font-size: 2.2rem; font-weight: 800; letter-spacing: -0.025em; margin-bottom: 1rem;'>
-                Take Control of Your Bills & <br><span style='color: #2563EB;'>Start Saving Money Instantly.</span>
-            </h1>
-            <p style='font-size: 1.1rem; color: #475569; max-width: 600px; margin: 0 auto 1.5rem auto;'>
-                BILLSCOPE reviews your monthly expenses, finds better deals, and negotiates lower rates on your behalf. Effortless savings, guaranteed.
-            </p>
-        </div>
-        """, 
-        unsafe_allow_html=True
-    )
-    
-    st.success(
-        "✨ **Short on time?** Don't spend hours comparing providers and hunting down better deals. "
-        "Let our Living Expense Concierge handle the hard work for you. **If we can't save you money, our service is completely free.**"
-    )
-
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("### How BILLSCOPE Works")
-    
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.markdown(
-            """
-            <div class="feature-card">
-                <h4>1. Upload Bills</h4>
-                <p style='font-size: 0.85rem; color: #475569;'>Securely upload your bills via PDF or quick manual form.</p>
-            </div>
-            """, 
-            unsafe_allow_html=True
-        )
-    with col2:
-        st.markdown(
-            """
-            <div class="feature-card">
-                <h4>2. We Analyze</h4>
-                <p style='font-size: 0.85rem; color: #475569;'>Engine scans for savings, pricing padding, and regional discrepancies.</p>
-            </div>
-            """, 
-            unsafe_allow_html=True
-        )
-    with col3:
-        st.markdown(
-            """
-            <div class="feature-card">
-                <h4>3. You Save</h4>
-                <p style='font-size: 0.85rem; color: #475569;'>Get notified of lower rates and approve your real household savings.</p>
-            </div>
-            """, 
-            unsafe_allow_html=True
-        )
+        # Clean up column names by stripping trailing/leading spaces
+        electricity.columns = electricity.columns.str.strip()
+        internet.columns = internet.columns.str.strip()
         
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.divider()
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    col_a, col_b, col_c = st.columns([1, 2, 1])
-    with col_b:
-        if st.button("Secure My Savings 🚀", type="primary", use_container_width=True):
-            st.session_state.app_page = "Instant Bill Auditor"
-            st.rerun()
+        return electricity, internet
+    except Exception as e:
+        st.error(f"Error loading benchmark data file: {e}")
+        return None, None
 
-# ==========================================
-# PAGE 1: INSTANT BILL AUDITOR
-# ==========================================
-elif st.session_state.app_page == "Instant Bill Auditor":
-    render_top_logo()
-    st.title("⚡ Household Bill Auditor")
-    st.subheader("Upload your bill or enter details to uncover potential savings.")
+elec_df, net_df = load_data()
 
-    input_method = st.radio("Choose Input Method", ["Quick Manual Entry", "Upload Bill (PDF)"], horizontal=True)
-    
-    category = st.selectbox("Select Bill Type", ["Electricity", "Internet"])
-    df = elec_df if category == "Electricity" else net_df
-    
-    user_postcode = 4557
-    current_cost = 150.0
-    billing_cycle = "Monthly"
-    provider_name = "Unknown"
-    nbn_tier = "NBN 50"
-    
-    internet_providers = [
-        "Telstra", "Optus", "TPG", "Aussie Broadband", "Superloop", 
-        "Vodafone", "Dodo", "iPrimus", "Exetel", "Leaptel", "AGL Energy", "Other"
-    ]
-    
-    nbn_tiers = [
-        "NBN 12", "NBN 25", "NBN 50", "NBN 100", 
-        "NBN 250", "NBN 500", "NBN 1000", "NBN 2000"
-    ]
-    
-    if input_method == "Quick Manual Entry":
-        st.markdown("#### Enter Bill Details")
-        col1, col2 = st.columns(2)
-        with col1:
-            user_postcode = st.number_input("Your Postcode", min_value=1000, max_value=9999, value=4557, step=1)
-            
-            if category == "Internet":
-                provider_name = st.selectbox("Current Internet Provider", internet_providers)
-                nbn_tier = st.selectbox("NBN Speed Tier", nbn_tiers)
-            else:
-                provider_name = st.text_input("Current Provider", "e.g. Origin, AGL")
-                
-        with col2:
-            if category == "Electricity":
-                billing_cycle = st.selectbox("Billing Cycle", ["Monthly", "Quarterly"])
-                current_cost = st.number_input("Current Cost ($)", min_value=0.0, value=150.0, step=5.0)
-            else:
-                billing_cycle = "Monthly"
-                current_cost = st.number_input("Current Cost per Month ($)", min_value=0.0, value=85.0, step=5.0)
+# --- APP HEADER ---
+st.title("⚡ BillScope Bill Audit & Comparison")
+st.markdown("Check your household electricity or internet bills against regional benchmarks to uncover potential savings.")
 
+# --- USER INPUT FORM ---
+st.sidebar.header("Audit Parameters")
+category = st.sidebar.selectbox("Select Utility Category", ["Electricity", "Internet"])
+user_postcode = st.sidebar.number_input("Enter Postcode", min_value=1000, max_value=9999, value=4000)
+
+nbn_tier = None
+if category == "Internet":
+    nbn_tier = st.sidebar.selectbox(
+        "Select NBN Speed Tier", 
+        ["NBN 25", "NBN 50", "NBN 100", "NBN 250", "NBN 500", "NBN 750", "NBN 1000"]
+    )
+
+user_cost = st.sidebar.number_input("Enter Your Current Monthly Cost ($)", min_value=0.0, value=120.0, step=5.0)
+
+# --- AUDIT EXECUTION ---
+if st.sidebar.button("Run Savings Analysis 🔍", type="primary"):
+    if elec_df is None or net_df is None:
+        st.error("Benchmark dataset is missing or failed to load. Ensure 'billscope_tabs.xlsx' is uploaded to your repository.")
     else:
-        st.markdown("#### Upload PDF Bill")
-        uploaded_file = st.file_uploader("Upload your recent bill statement", type=["pdf"])
+        benchmark = None
+        provider = None
+        region_name = "Unknown Region"
         
-        user_postcode = st.number_input("Confirm Your Postcode", min_value=1000, max_value=9999, value=4557, step=1)
+        if category == "Electricity":
+            match = elec_df[(elec_df["postcode start"] <= user_postcode) & (elec_df["postcode end"] >= user_postcode)]
+            if not match.empty:
+                benchmark = match.iloc[0]["benchmark_cost"]
+                provider = match.iloc[0]["top_provider"]
+                region_name = match.iloc[0]["region"]
+        else:  # Internet
+            match = net_df[(net_df["postcode start"] <= user_postcode) & (net_df["postcode end"] >= user_postcode)]
+            if not match.empty:
+                # Map selected tier string to match column names (e.g. 'NBN 50' -> 'nbn_50_cost')
+                tier_col = nbn_tier.lower().replace(" ", "_") + "_cost"
+                if tier_col in match.columns:
+                    benchmark = match.iloc[0][tier_col]
+                provider = match.iloc[0]["top_provider"]
+                region_name = match.iloc[0]["region"]
         
-        if category == "Internet":
-            provider_name = st.selectbox("Confirm Internet Provider", internet_providers)
-            nbn_tier = st.selectbox("Confirm NBN Speed Tier", nbn_tiers)
-        
-        if uploaded_file is not None:
-            with st.spinner("Reading bill details..."):
-                try:
-                    with pdfplumber.open(uploaded_file) as pdf:
-                        extracted_text = ""
-                        for page in pdf.pages:
-                            extracted_text += page.extract_text() or ""
-                    st.success("Bill successfully scanned!")
-                except Exception as ex:
-                    st.warning(f"Could not automatically parse PDF text ({ex}). Please enter cost manually below.")
+        # --- DISPLAY RESULTS ---
+        st.divider()
+        if benchmark is not None and pd.notna(benchmark):
+            st.subheader(f"Region Audit: {region_name}")
             
-            if category == "Electricity":
-                billing_cycle = st.selectbox("Billing Cycle", ["Monthly", "Quarterly"])
-                current_cost = st.number_input("Confirmed Bill Cost ($ from statement)", min_value=0.0, value=200.0, step=5.0)
+            col1, col2, col3 = st.columns(3)
+            col1.metric("Your Monthly Cost", f"${user_cost:.2f}")
+            col2.metric("Regional Benchmark", f"${benchmark:.2f}")
+            
+            diff = user_cost - benchmark
+            if diff > 0:
+                col3.metric("Potential Overpay", f"${diff:.2f}/mo", delta=f"-${diff:.2f}", delta_color="inverse")
+                st.warning(f"⚠️ You appear to be paying **${diff:.2f} more per month** than the regional benchmark for {category.lower()}.")
+                if pd.notna(provider):
+                    st.info(f"💡 **Recommendation:** Consider looking into **{provider}**, a top-performing provider in your area.")
             else:
-                current_cost = st.number_input("Confirmed Cost per Month ($ from statement)", min_value=0.0, value=85.0, step=5.0)
+                col3.metric("Savings Status", "Great Rate!", delta=f"+${abs(diff):.2f}", delta_color="normal")
+                st.success(f"🎉 Excellent news! Your current rate is at or below the regional benchmark.")
         else:
-            st.info("Please upload a PDF file to begin extraction.")
+            st.warning(f"⚠️ No benchmark data is currently available for postcode **{user_postcode}** in the {category} sheet.")
 
-    st.divider()
-
-    if "audit_run" not in st.session_state:
-        st.session_state.audit_run = False
-
-    if st.button("Run Savings Analysis 🔍", type="primary"):
-        st.session_state.audit_run = True
-        st.session_state.audited_category = category
-        st.session_state.audited_postcode = user_postcode
-        st.session_state.audited_provider = provider_name
-        st.session_state.audited_nbn_tier = nbn_tier
-        st.session_state.audited_current_cost = current_cost
-        
-        match = df[(df["postcode_start"] <= user_postcode) & (df["postcode_end"] >= user_postcode)]
-        if not match.empty:
-            region_name = match.iloc[0]["region"]
-            benchmark = match.iloc[0]["benchmark_cost"]
-            monthly_user = current_cost / 3 if (category == "Electricity" and billing_cycle == "Quarterly") else current_cost
-            st.session_state.audited_savings = (monthly_user * 12) - (benchmark * 12)
-            st.session_state.audited_user_cost = monthly_user * 12
-            st.session_state.audited_benchmark_cost = benchmark * 12
-            st.session_state.audited_region = region_name
-        else:
-            st.session_state.audited_savings = None
-
-    if st.session_state.audit_run:
-        if st.session_state.audited_savings is not None:
-            st.subheader(f"📊 Audit Results for Postcode {st.session_state.audited_postcode}")
-            if st.session_state.audited_category == "Internet":
-                st.caption(f"Matched Region: **{st.session_state.audited_region}** | Provider: **{st.session_state.audited_provider}** | Tier: **{st.session_state.audited_nbn_tier}**")
-            else:
-                st.caption(f"Matched Region: **{st.session_state.audited_region}** | Provider: **{st.session_state.audited_provider}**")
-            
-            col1, col2 = st.columns(2)
-            col1.metric("Your Estimated Annual Cost", f"${st.session_state.audited_user_cost:,.2f}")
-            col2.metric("Regional Benchmark Target", f"${st.session_state.audited_benchmark_cost:,.2f}")
-            
-            st.markdown("---")
-            
-            if st.session_state.audited_savings > 0:
-                st.error(f"⚠️ **Lazy Tax Detected!** You are paying approximately **${st.session_state.audited_savings:,.2f} more per year** than the regional benchmark.")
-                
-                st.markdown("### Want us to slash this bill for you?")
-                st.write("Fill out your details below to send your audit request straight to your living expense concierge.")
-                
-                with st.form("audit_enquiry_form"):
-                    client_name = st.text_input("Your Full Name")
-                    client_mobile = st.text_input("Mobile Number")
-                    client_email = st.text_input("Email Address")
-                    user_notes = st.text_area("Notes / What you want reviewed", value=f"Please help me review my {st.session_state.audited_category} bill. Current cost is ${st.session_state.audited_current_cost} with {st.session_state.audited_provider}.")
-                    
-                    submitted = st.form_submit_button("Send Request to Your Living Expense Concierge 🚀")
-                    
-                    if submitted:
-                        if client_name and client_mobile and client_email:
-                            email_subject = f"New BillScope Lead: {client_name} (Postcode {st.session_state.audited_postcode})"
-                            email_body = (
-                                f"A new audit request has been submitted through BillScope:\n\n"
-                                f"--- Client Details ---\n"
-                                f"Name: {client_name}\n"
-                                f"Mobile: {client_mobile}\n"
-                                f"Email: {client_email}\n\n"
-                                f"--- Audit Information ---\n"
-                                f"Bill Type: {st.session_state.audited_category}\n"
-                                f"Postcode: {st.session_state.audited_postcode}\n"
-                                f"Provider: {st.session_state.audited_provider}\n"
-                                f"NBN Tier: {st.session_state.audited_nbn_tier if st.session_state.audited_category == 'Internet' else 'N/A'}\n"
-                                f"Current Cost: ${st.session_state.audited_current_cost}\n"
-                                f"Estimated Savings: ${st.session_state.audited_savings:,.2f}/yr\n\n"
-                                f"--- Client Notes ---\n"
-                                f"{user_notes}"
-                            )
-                            
-                            with st.spinner("Dispatching email..."):
-                                success = send_resend_email(email_subject, email_body)
-                                if success:
-                                    st.success("🎉 Success! Your enquiry has been sent straight to your living expense concierge.")
-                        else:
-                            st.warning("Please fill in your Name, Mobile, and Email address.")
-            else:
-                st.success(f"✅ **Great Job!** Your current rate is competitive and sitting at or below the regional benchmark.")
-        else:
-            st.warning("⚠️ Postcode not found within current QLD regional tracking ranges. Please double-check your postcode.")
-
-# ==========================================
-# PAGE 2: CONTACT CONCIERGE (GENERAL FORM)
-# ==========================================
-elif st.session_state.app_page == "Contact Concierge":
-    render_top_logo()
-    st.title("💬 Living Expense Concierge")
-    st.subheader("Have multiple bills or custom items you want reviewed? Send a note directly.")
-    
-    with st.form("general_concierge_form"):
-        client_name = st.text_input("Your Name")
-        client_mobile = st.text_input("Mobile Number")
-        client_email = st.text_input("Email Address")
-        bill_types = st.multiselect("What bills do you want help with?", ["Electricity", "Internet / NBN", "Mobile Phone", "Insurance", "Streaming / Subscriptions", "Other"])
-        notes = st.text_area("Notes / Details", placeholder="e.g., My energy and internet bills are too high, please help me review them.")
-        
-        submitted = st.form_submit_button("Send General Enquiry 🚀")
-        
-        if submitted:
-            if client_name and client_mobile and notes:
-                email_subject = f"General BillScope Inquiry from {client_name}"
-                email_body = (
-                    f"Name: {client_name}\n"
-                    f"Mobile: {client_mobile}\n"
-                    f"Email: {client_email}\n"
-                    f"Target Bills: {', '.join(bill_types)}\n\n"
-                    f"Notes:\n{notes}"
-                )
-                
-                with st.spinner("Dispatching email..."):
-                    success = send_resend_email(email_subject, email_body)
-                    if success:
-                        st.success("🎉 Success! Your enquiry has been sent straight to your living expense concierge.")
-            else:
-                st.warning("Please fill in your Name, Mobile, and Notes before submitting.")
-
-# ==========================================
-# PAGE 3: TERMS & CONDITIONS
-# ==========================================
-elif st.session_state.app_page == "Terms & Conditions":
-    render_top_logo()
-    st.title("⚖️ Terms of Service & Disclaimers")
-    st.markdown("""
-    ### 1. General Information Only
-    BillScope is an independent software tool designed for general information, calculation, and benchmarking purposes only. It does not constitute personal financial, tax, or legal advice.
-    
-    ### 2. Concierge Services
-    Our bill reduction concierge service assists with administrative guidance and comparison referrals. We do not provide credit assistance or mortgage products.
-    
-    ### 3. Limitation of Liability
-    To the maximum extent permitted by law, BillScope accepts no liability for any financial loss or variation in utility contract pricing.
-    """)
+# --- FOOTER ---
+st.markdown("---")
+st.caption("BillScope v1.2 • Powered by custom regional benchmarks.")

@@ -52,7 +52,7 @@ except Exception as e:
 if "app_page" not in st.session_state:
     st.session_state.app_page = "Home"
 
-# --- CUSTOM CSS FOR MATCHING LOGO BACKGROUND COLOUR & LIGHT INPUT BOXES ---
+# --- CUSTOM CSS FOR MATCHING LOGO BACKGROUND COLOUR & WHITE INPUT BOXES WITH THIN BLACK OUTLINE ---
 st.markdown("""
     <style>
     /* Main App Background matched to logo's soft grey tone */
@@ -81,17 +81,17 @@ st.markdown("""
         color: #334155 !important;
     }
     
-    /* Lighter input fields easier on the eyes */
+    /* Updated input fields: pure white background with a thin black outline */
     .stTextInput input, .stSelectbox select, .stNumberInput input, .stTextArea textarea {
-        background-color: #F4F6F8 !important;
-        border: 1px solid #CBD5E1 !important;
-        border-radius: 8px !important;
+        background-color: #FFFFFF !important;
+        border: 1px solid #000000 !important;
+        border-radius: 4px !important;
         color: #1E293B !important;
     }
     .stTextInput input:focus, .stSelectbox select:focus, .stNumberInput input:focus, .stTextArea textarea:focus {
         background-color: #FFFFFF !important;
-        border-color: #3B82F6 !important;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+        border-color: #000000 !important;
+        box-shadow: 0 0 0 1px #000000 !important;
     }
 
     .hero-container {
@@ -251,14 +251,14 @@ elif st.session_state.app_page == "Instant Bill Auditor":
     current_cost = 150.0
     billing_cycle = "Monthly"
     provider_name = "Unknown"
-    nbn_tier = "NBN 50"
+    nbn_tier = "nbn 50"
     
     internet_providers = [
         "Telstra", "Optus", "TPG", "Aussie Broadband", "Superloop", 
         "Vodafone", "Dodo", "iPrimus", "Exetel", "Leaptel", "AGL Energy", "Other"
     ]
     
-    # Updated Speed Options from nbn 25 up to nbn 1000
+    # Speed Options from nbn 25 up to nbn 1000
     nbn_tiers = ["nbn 25", "nbn 50", "nbn 100", "nbn 250", "nbn 500", "nbn 750", "nbn 1000"]
     
     st.markdown("#### Enter Bill Details")
@@ -333,7 +333,7 @@ elif st.session_state.app_page == "Instant Bill Auditor":
         if st.session_state.audited_savings is not None:
             st.subheader(f"📊 Audit Results for Postcode {st.session_state.audited_postcode}")
             
-            # Credibility fix: Check if top provider is valid (not NaN / missing)
+            # Credibility check: Check if top provider is valid (not NaN / missing)
             has_valid_provider = pd.notna(st.session_state.audited_top_provider) and str(st.session_state.audited_top_provider).strip().lower() != "nan"
             
             if st.session_state.audited_category == "Internet":

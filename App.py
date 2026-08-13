@@ -52,7 +52,7 @@ except Exception as e:
 if "app_page" not in st.session_state:
     st.session_state.app_page = "Home"
 
-# --- CUSTOM CSS FOR MATCHING LOGO BACKGROUND COLOUR ---
+# --- CUSTOM CSS FOR MATCHING LOGO BACKGROUND COLOUR & LIGHT INPUT BOXES ---
 st.markdown("""
     <style>
     /* Main App Background matched to logo's soft grey tone */
@@ -80,6 +80,20 @@ st.markdown("""
     p, label, span {
         color: #334155 !important;
     }
+    
+    /* Lighter input fields easier on the eyes */
+    .stTextInput input, .stSelectbox select, .stNumberInput input, .stTextArea textarea {
+        background-color: #F4F6F8 !important;
+        border: 1px solid #CBD5E1 !important;
+        border-radius: 8px !important;
+        color: #1E293B !important;
+    }
+    .stTextInput input:focus, .stSelectbox select:focus, .stNumberInput input:focus, .stTextArea textarea:focus {
+        background-color: #FFFFFF !important;
+        border-color: #3B82F6 !important;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+    }
+
     .hero-container {
         padding: 2rem 1rem;
         background: linear-gradient(135deg, #E2E8F0 0%, #F1F3F4 100%);
@@ -152,23 +166,30 @@ if st.session_state.app_page == "Home":
     render_top_logo()
     st.markdown("<br>", unsafe_allow_html=True)
 
+    # Core Value Prop Hero & Direct Call to Action
     st.markdown(
         """
         <div class="hero-container">
             <h1 style='font-size: 2.2rem; font-weight: 800; letter-spacing: -0.025em; margin-bottom: 1rem;'>
-                Take Control of Your Bills & <br><span style='color: #2563EB;'>Start Saving Money Instantly.</span>
+                Are you paying too much for your <br><span style='color: #2563EB;'>household bills?</span>
             </h1>
             <p style='font-size: 1.1rem; color: #475569; max-width: 600px; margin: 0 auto 1.5rem auto;'>
-                BILLSCOPE reviews your monthly expenses, finds better deals, and negotiates lower rates on your behalf. Effortless savings, guaranteed.
+                Find out in under 2 minutes. Enter what you’re currently paying and we’ll compare your bills with households in your area.
             </p>
         </div>
         """, 
         unsafe_allow_html=True
     )
     
-    st.success(
-        "✨ **Short on time?** Don't spend hours comparing providers and hunting down better deals. "
-        "Let our Living Expense Concierge handle the hard work for you. **If we can't save you money, our service is completely free.**"
+    col_a, col_b, col_c = st.columns([1, 2, 1])
+    with col_b:
+        if st.button("Check my bills →", type="primary", use_container_width=True):
+            st.session_state.app_page = "Instant Bill Auditor"
+            st.rerun()
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.info(
+        "✨ **How we help:** If we identify a worthwhile saving, our Living Expense Concierge can research the best options for you."
     )
 
     st.markdown("<br>", unsafe_allow_html=True)
@@ -179,8 +200,8 @@ if st.session_state.app_page == "Home":
         st.markdown(
             """
             <div class="feature-card">
-                <h4>1. Enter Details</h4>
-                <p style='font-size: 0.85rem; color: #475569;'>Quickly input your bill details and postcode via our simple form.</p>
+                <h4>1. Tell us what you’re paying</h4>
+                <p style='font-size: 0.85rem; color: #475569;'>Enter your current bill and a few details about your household.</p>
             </div>
             """, 
             unsafe_allow_html=True
@@ -189,8 +210,8 @@ if st.session_state.app_page == "Home":
         st.markdown(
             """
             <div class="feature-card">
-                <h4>2. We Analyze</h4>
-                <p style='font-size: 0.85rem; color: #475569;'>Engine scans for savings, pricing padding, and regional discrepancies.</p>
+                <h4>2. We find the opportunity</h4>
+                <p style='font-size: 0.85rem; color: #475569;'>BillScope compares your costs with relevant regional benchmarks.</p>
             </div>
             """, 
             unsafe_allow_html=True
@@ -199,8 +220,8 @@ if st.session_state.app_page == "Home":
         st.markdown(
             """
             <div class="feature-card">
-                <h4>3. You Save</h4>
-                <p style='font-size: 0.85rem; color: #475569;'>Get notified of lower rates and approve your real household savings.</p>
+                <h4>3. We do the legwork</h4>
+                <p style='font-size: 0.85rem; color: #475569;'>If there’s a worthwhile saving, our concierge researches your options for you.</p>
             </div>
             """, 
             unsafe_allow_html=True
@@ -208,13 +229,13 @@ if st.session_state.app_page == "Home":
         
     st.markdown("<br>", unsafe_allow_html=True)
     st.divider()
-    st.markdown("<br>", unsafe_allow_html=True)
     
-    col_a, col_b, col_c = st.columns([1, 2, 1])
-    with col_b:
-        if st.button("Secure My Savings 🚀", type="primary", use_container_width=True):
-            st.session_state.app_page = "Instant Bill Auditor"
-            st.rerun()
+    # Why Use BillScope Section
+    st.markdown("### Why use BillScope?")
+    st.write(
+        "Comparison sites make you do the work: entering info, comparing dozens of plans, deciphering pricing structures, "
+        "and dealing directly with providers. **Tell us what you’re paying. We’ll do the research.**"
+    )
 
 # ==========================================
 # PAGE 1: INSTANT BILL AUDITOR
@@ -222,7 +243,7 @@ if st.session_state.app_page == "Home":
 elif st.session_state.app_page == "Instant Bill Auditor":
     render_top_logo()
     st.title("⚡ Household Bill Auditor")
-    st.subheader("Enter your details below to uncover potential savings against regional benchmarks.")
+    st.subheader("Tell us what you're paying. We'll identify where you're overpaying and do the research for you.")
 
     category = st.selectbox("Select Bill Type", ["Electricity", "Internet"])
     
@@ -237,7 +258,8 @@ elif st.session_state.app_page == "Instant Bill Auditor":
         "Vodafone", "Dodo", "iPrimus", "Exetel", "Leaptel", "AGL Energy", "Other"
     ]
     
-    nbn_tiers = ["NBN 25", "NBN 50", "NBN 100", "NBN 250", "NBN 500", "NBN 750", "NBN 1000"]
+    # Updated Speed Options from nbn 25 up to nbn 1000
+    nbn_tiers = ["nbn 25", "nbn 50", "nbn 100", "nbn 250", "nbn 500", "nbn 750", "nbn 1000"]
     
     st.markdown("#### Enter Bill Details")
     col1, col2 = st.columns(2)
@@ -310,23 +332,59 @@ elif st.session_state.app_page == "Instant Bill Auditor":
     if st.session_state.audit_run:
         if st.session_state.audited_savings is not None:
             st.subheader(f"📊 Audit Results for Postcode {st.session_state.audited_postcode}")
-            if st.session_state.audited_category == "Internet":
-                st.caption(f"Matched Region: **{st.session_state.audited_region}** | Tier: **{st.session_state.audited_nbn_tier}** | Recommended Local Provider: **{st.session_state.audited_top_provider}**")
-            else:
-                st.caption(f"Matched Region: **{st.session_state.audited_region}** | Recommended Local Provider: **{st.session_state.audited_top_provider}**")
             
-            col1, col2 = st.columns(2)
-            col1.metric("Your Estimated Annual Cost", f"${st.session_state.audited_user_cost:,.2f}")
-            col2.metric("Regional Benchmark Target", f"${st.session_state.audited_benchmark_cost:,.2f}")
+            # Credibility fix: Check if top provider is valid (not NaN / missing)
+            has_valid_provider = pd.notna(st.session_state.audited_top_provider) and str(st.session_state.audited_top_provider).strip().lower() != "nan"
+            
+            if st.session_state.audited_category == "Internet":
+                if has_valid_provider:
+                    st.caption(f"Matched Region: **{st.session_state.audited_region}** | Tier: **{st.session_state.audited_nbn_tier}** | Recommended Local Provider: **{st.session_state.audited_top_provider}**")
+                else:
+                    st.caption(f"Matched Region: **{st.session_state.audited_region}** | Tier: **{st.session_state.audited_nbn_tier}**")
+            else:
+                if has_valid_provider:
+                    st.caption(f"Matched Region: **{st.session_state.audited_region}** | Recommended Local Provider: **{st.session_state.audited_top_provider}**")
+                else:
+                    st.caption(f"Matched Region: **{st.session_state.audited_region}**")
+            
+            # Hero Dominant Savings Number & Comparison Breakdown
+            annual_saving = st.session_state.audited_savings
+            monthly_saving = annual_saving / 12 if annual_saving > 0 else 0
+            
+            st.markdown("### You could be paying too much")
+            
+            col_save1, col_save2 = st.columns(2)
+            col_save1.metric("Estimated potential saving (Year)", f"${annual_saving:,.0f}/year" if annual_saving > 0 else "$0/year")
+            col_save2.metric("Estimated potential saving (Month)", f"${monthly_saving:,.0f}/month" if annual_saving > 0 else "$0/month")
+            
+            st.write(f"You’re currently spending approximately **${st.session_state.audited_user_cost:,.0f}/year**, compared with what similar households pay of **${st.session_state.audited_benchmark_cost:,.0f}/year**.")
+            st.write("We’ll investigate whether that saving is actually available to you.")
             
             st.markdown("---")
             
-            if st.session_state.audited_savings > 0:
-                st.error(f"⚠️ **Lazy Tax Detected!** You are paying approximately **${st.session_state.audited_savings:,.2f} more per year** than the regional benchmark.")
-                st.info(f"💡 **Local Expert Insight:** In your region, top households switch to **{st.session_state.audited_top_provider}** for better rates.")
+            # Savings Opportunity Rating and Softer Lazy Tax Messaging
+            if annual_saving > 600:
+                opportunity_rating = "🔴 High opportunity ($600+/yr potential saving — definitely worth investigating)"
+            elif annual_saving >= 200:
+                opportunity_rating = "🟠 Moderate opportunity ($200–$600/yr potential saving — worthwhile alternatives exist)"
+            else:
+                opportunity_rating = "🟢 Low opportunity (<$200/yr potential saving — you're already relatively competitive)"
+            
+            st.markdown(f"**Savings Opportunity Rating:** {opportunity_rating}")
+            
+            if annual_saving > 0:
+                st.info(
+                    "💰 **You’re Potentially Paying the Lazy Tax**\n\n"
+                    "*The Lazy Tax:* The extra money households often spend simply because they haven’t had the time to review their current bills."
+                )
+                
+                if has_valid_provider:
+                    st.success(f"💡 **BillScope Insight:** In your region, top households switch to **{st.session_state.audited_top_provider}** for better rates.")
+                else:
+                    st.info("💡 **BillScope Insight:** There may be cheaper options available in your area. We’ll research the current market for you.")
                 
                 st.markdown("### Want us to slash this bill for you?")
-                st.write("Fill out your details below to send your audit request straight to your living expense concierge.")
+                st.write("Don’t spend your weekend comparing plans. We’ll do the research for you. Give us a few details and we’ll investigate your current arrangement and look for better options available to you.")
                 
                 with st.form("audit_enquiry_form"):
                     client_name = st.text_input("Your Full Name")
@@ -334,7 +392,7 @@ elif st.session_state.app_page == "Instant Bill Auditor":
                     client_email = st.text_input("Email Address")
                     user_notes = st.text_area("Notes / What you want reviewed", value=f"Please help me review my {st.session_state.audited_category} bill. Current cost is ${st.session_state.audited_current_cost} with {st.session_state.audited_provider}.")
                     
-                    submitted = st.form_submit_button("Send Request to Your Living Expense Concierge 🚀")
+                    submitted = st.form_submit_button("Have BillScope investigate my bills 🚀")
                     
                     if submitted:
                         if client_name and client_mobile and client_email:
@@ -352,7 +410,7 @@ elif st.session_state.app_page == "Instant Bill Auditor":
                                 f"NBN Tier: {st.session_state.audited_nbn_tier if st.session_state.audited_category == 'Internet' else 'N/A'}\n"
                                 f"Current Cost: ${st.session_state.audited_current_cost}\n"
                                 f"Estimated Savings: ${st.session_state.audited_savings:,.2f}/yr\n"
-                                f"Recommended Provider: {st.session_state.audited_top_provider}\n\n"
+                                f"Recommended Provider: {st.session_state.audited_top_provider if has_valid_provider else 'Market Research Required'}\n\n"
                                 f"--- Client Notes ---\n"
                                 f"{user_notes}"
                             )
@@ -364,9 +422,9 @@ elif st.session_state.app_page == "Instant Bill Auditor":
                         else:
                             st.warning("Please fill in your Name, Mobile, and Email address.")
             else:
-                st.success(f"✅ **Great Job!** Your current rate is competitive and sitting at or below the regional benchmark.")
+                st.success(f"✅ **Great Job!** Your current rate is competitive and sitting at or below what similar households pay.")
         else:
-            st.warning("⚠️ Postcode not found within current QLD regional tracking ranges. Please double-check your postcode.")
+            st.warning("⚠️ Postcode not found within current tracking ranges. Please double-check your postcode.")
 
 # ==========================================
 # PAGE 2: CONTACT CONCIERGE (GENERAL FORM)

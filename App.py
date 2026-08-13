@@ -52,7 +52,7 @@ except Exception as e:
 if "app_page" not in st.session_state:
     st.session_state.app_page = "Home"
 
-# --- CUSTOM CSS FOR COMPREHENSIVE SELECTBOX AND INPUT STYLING ---
+# --- CUSTOM CSS FOR AGGRESSIVE SELECTBOX & INPUT STYLING ---
 st.markdown("""
     <style>
     /* Main App Background matched to logo's soft grey tone */
@@ -81,30 +81,31 @@ st.markdown("""
         color: #334155 !important;
     }
     
-    /* Universal white background and thin black outline for inputs, numbers, textareas, and all selectboxes */
+    /* Target all input fields and Streamlit / BaseWeb selectbox containers */
     .stTextInput input, 
     .stNumberInput input, 
-    .stTextArea textarea, 
-    div[data-baseweb="select"] > div,
-    div[data-baseweb="base-input"],
-    .stSelectbox [data-baseweb="select"] > div {
+    .stTextArea textarea,
+    .stSelectbox div[data-baseweb="select"],
+    div[data-baseweb="select"] > div {
         background-color: #FFFFFF !important;
         border: 1px solid #000000 !important;
         border-radius: 4px !important;
         color: #1E293B !important;
     }
-    
-    /* Force inner components of select dropdowns to also be white with dark text */
+
+    /* Force all nested text, dropdown indicators, and containers inside selectboxes to be white with dark text */
+    .stSelectbox div[data-baseweb="select"] *,
     div[data-baseweb="select"] span, 
-    div[data-baseweb="select"] div,
-    .stSelectbox div[data-baseweb="select"] * {
+    div[data-baseweb="select"] div {
         background-color: #FFFFFF !important;
         color: #1E293B !important;
     }
 
+    /* Focus state outline */
     .stTextInput input:focus, 
     .stNumberInput input:focus, 
     .stTextArea textarea:focus, 
+    .stSelectbox div[data-baseweb="select"]:focus-within,
     div[data-baseweb="select"] > div:focus-within {
         background-color: #FFFFFF !important;
         border-color: #000000 !important;

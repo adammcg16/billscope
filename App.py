@@ -1,9 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NBN Plan Selector & Form</title>
+import streamlit as st
+
+# Page Configuration
+st.set_page_config(page_title="NBN Plan Selector", page_icon="🌐", layout="centered")
+
+# Custom CSS styling with updated input background colors and nbn speeds
+st.markdown(
+    """
     <style>
         :root {
             --bg-color: #f8fafc;
@@ -17,16 +19,9 @@
             --primary-hover: #1d4ed8;
         }
 
-        body {
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        .stApp {
             background-color: var(--bg-color);
             color: var(--text-main);
-            margin: 0;
-            padding: 40px 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
         }
 
         .container {
@@ -34,106 +29,52 @@
             padding: 32px;
             border-radius: 12px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            width: 100%;
-            max-width: 480px;
         }
 
-        h2 {
-            margin-top: 0;
-            margin-bottom: 24px;
-            font-size: 24px;
-            font-weight: 600;
+        /* Streamlit input field overrides */
+        .stTextInput input, .stSelectbox select {
+            background-color: var(--input-bg) !important;
+            border: 1px solid var(--input-border) !important;
+            border-radius: 8px !important;
+            color: var(--text-main) !important;
         }
 
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            font-size: 14px;
-        }
-
-        /* Updated input styling: lighter background, softer borders, comfortable contrast */
-        input[type="text"],
-        input[type="email"],
-        select {
-            width: 100%;
-            padding: 12px 16px;
-            background-color: var(--input-bg);
-            border: 1px solid var(--input-border);
-            border-radius: 8px;
-            color: var(--text-main);
-            font-size: 15px;
-            box-sizing: border-box;
-            transition: all 0.2s ease;
-        }
-
-        input[type="text"]:focus,
-        input[type="email"]:focus,
-        select:focus {
-            outline: none;
-            background-color: #ffffff;
-            border-color: var(--input-focus);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
-        }
-
-        select option {
-            background-color: #ffffff;
-            color: var(--text-main);
-        }
-
-        button {
-            width: 100%;
-            padding: 12px 16px;
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-            margin-top: 8px;
-        }
-
-        button:hover {
-            background-color: var(--primary-hover);
+        .stTextInput input:focus, .stSelectbox select:focus {
+            background-color: #ffffff !important;
+            border-color: var(--input-focus) !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
         }
     </style>
-</head>
-<body>
+""",
+    unsafe_allow_html=True,
+)
 
-    <div class="container">
-        <h2>Select Your nbn® Plan</h2>
-        <form>
-            <div class="form-group">
-                <label for="fullName">Full Name</label>
-                <input type="text" id="fullName" placeholder="Enter your full name">
-            </div>
+# App UI
+st.markdown("## Select Your nbn® Plan")
 
-            <div class="form-group">
-                <label for="email">Email Address</label>
-                <input type="email" id="email" placeholder="Enter your email">
-            </div>
+with st.form("nbn_form"):
+  full_name = st.text_input("Full Name", placeholder="Enter your full name")
+  email = st.text_input("Email Address", placeholder="Enter your email")
 
-            <div class="form-group">
-                <label for="nbnSpeed">Choose nbn® Speed Tier</label>
-                <select id="nbnSpeed">
-                    <option value="" disabled selected>Select a speed tier</option>
-                    <option value="nbn25">nbn® 25 (Home Basic II)</option>
-                    <option value="nbn50">nbn® 50 (Home Standard)</option>
-                    <option value="nbn100">nbn® 100 (Home Fast)</option>
-                    <option value="nbn250">nbn® 250 (Home Superfast)</option>
-                    <option value="nbn1000">nbn® 1000 (Home Ultrafast)</option>
-                </select>
-            </div>
+  nbn_speed = st.selectbox(
+      "Choose nbn® Speed Tier",
+      [
+          "Select a speed tier",
+          "nbn® 25 (Home Basic II)",
+          "nbn® 50 (Home Standard)",
+          "nbn® 100 (Home Fast)",
+          "nbn® 250 (Home Superfast)",
+          "nbn® 1000 (Home Ultrafast)",
+      ],
+  )
 
-            <button type="submit">Check Availability</button>
-        </form>
-    </div>
+  submitted = st.form_submit_button("Check Availability")
 
-</body>
-</html>
+  if submitted:
+    if not full_name or not email or nbn_speed == "Select a speed tier":
+      st.warning("Please fill out all fields and select a valid speed tier.")
+    else:
+      st.success(
+          f"Thank you, {full_name}! Your request for {nbn_speed} has been"
+          " received."
+      )

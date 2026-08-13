@@ -52,7 +52,7 @@ except Exception as e:
 if "app_page" not in st.session_state:
     st.session_state.app_page = "Home"
 
-# --- CUSTOM CSS FOR MATCHING LOGO BACKGROUND COLOUR & WHITE INPUT BOXES WITH THIN BLACK OUTLINE ---
+# --- CUSTOM CSS FOR COMPREHENSIVE SELECTBOX AND INPUT STYLING ---
 st.markdown("""
     <style>
     /* Main App Background matched to logo's soft grey tone */
@@ -81,19 +81,23 @@ st.markdown("""
         color: #334155 !important;
     }
     
-    /* Comprehensive targeting for text inputs, numbers, textareas, and selectboxes (dropdowns) */
+    /* Universal white background and thin black outline for inputs, numbers, textareas, and all selectboxes */
     .stTextInput input, 
     .stNumberInput input, 
     .stTextArea textarea, 
-    div[data-baseweb="select"] > div {
+    div[data-baseweb="select"] > div,
+    div[data-baseweb="base-input"],
+    .stSelectbox [data-baseweb="select"] > div {
         background-color: #FFFFFF !important;
         border: 1px solid #000000 !important;
         border-radius: 4px !important;
         color: #1E293B !important;
     }
     
-    /* Target dropdown arrow/text container specifically */
-    div[data-baseweb="select"] div {
+    /* Force inner components of select dropdowns to also be white with dark text */
+    div[data-baseweb="select"] span, 
+    div[data-baseweb="select"] div,
+    .stSelectbox div[data-baseweb="select"] * {
         background-color: #FFFFFF !important;
         color: #1E293B !important;
     }

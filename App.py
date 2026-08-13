@@ -52,10 +52,10 @@ except Exception as e:
 if "app_page" not in st.session_state:
     st.session_state.app_page = "Home"
 
-# --- CUSTOM CSS FOR AGGRESSIVE SELECTBOX & INPUT STYLING ---
+# --- CUSTOM CSS FOR BULLETPROOF SELECTBOX & INPUT FORCING ---
 st.markdown("""
     <style>
-    /* Main App Background matched to logo's soft grey tone */
+    /* Main App Background */
     .stApp {
         background-color: #F1F3F4;
         color: #1F2937;
@@ -81,32 +81,43 @@ st.markdown("""
         color: #334155 !important;
     }
     
-    /* Target all input fields and Streamlit / BaseWeb selectbox containers */
+    /* 
+       ULTIMATE SELECTBOX & INPUT OVERRIDE 
+       Targeting every possible Streamlit / BaseWeb wrapper class to force white background and black borders 
+    */
     .stTextInput input, 
     .stNumberInput input, 
     .stTextArea textarea,
-    .stSelectbox div[data-baseweb="select"],
-    div[data-baseweb="select"] > div {
+    div[data-baseweb="select"],
+    div[data-baseweb="select"] > div,
+    div.stSelectbox div[data-baseweb="select"],
+    div.stSelectbox div[data-baseweb="select"] > div {
         background-color: #FFFFFF !important;
+        background: #FFFFFF !important;
         border: 1px solid #000000 !important;
         border-radius: 4px !important;
         color: #1E293B !important;
     }
 
-    /* Force all nested text, dropdown indicators, and containers inside selectboxes to be white with dark text */
-    .stSelectbox div[data-baseweb="select"] *,
-    div[data-baseweb="select"] span, 
-    div[data-baseweb="select"] div {
-        background-color: #FFFFFF !important;
+    /* Force all text elements, inner divs, and spans inside selectboxes to match */
+    div[data-baseweb="select"] *,
+    .stSelectbox div[data-baseweb="select"] * {
+        background-color: transparent !important;
         color: #1E293B !important;
     }
 
-    /* Focus state outline */
+    /* Target specific inner container of the selectbox control itself */
+    div[data-baseweb="select"] > div:first-child {
+        background-color: #FFFFFF !important;
+        border: none !important;
+    }
+
+    /* Focus states */
     .stTextInput input:focus, 
     .stNumberInput input:focus, 
     .stTextArea textarea:focus, 
-    .stSelectbox div[data-baseweb="select"]:focus-within,
-    div[data-baseweb="select"] > div:focus-within {
+    div[data-baseweb="select"] > div:focus-within,
+    div[data-baseweb="select"]:focus-within {
         background-color: #FFFFFF !important;
         border-color: #000000 !important;
         box-shadow: 0 0 0 1px #000000 !important;

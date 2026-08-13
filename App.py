@@ -52,7 +52,7 @@ except Exception as e:
 if "app_page" not in st.session_state:
     st.session_state.app_page = "Home"
 
-# --- SIMPLIFIED SOLID WHITE CSS FOR INPUTS & SELECTBOXES ---
+# --- CUSTOM CSS FOR PURE WHITE SELECTBOXES WITH THIN BLACK OUTLINE ---
 st.markdown("""
     <style>
     /* Main App Background */
@@ -81,7 +81,7 @@ st.markdown("""
         color: #334155 !important;
     }
     
-    /* Force solid white backgrounds and clean black borders on all input boxes and dropdowns */
+    /* Target inputs and selectbox wrapper layers to enforce solid white background and thin black outline */
     .stTextInput input, 
     .stNumberInput input, 
     .stTextArea textarea,
@@ -93,9 +93,10 @@ st.markdown("""
         color: #1E293B !important;
     }
 
-    /* Ensure text inside select boxes and inputs is clearly visible */
+    /* Force text and elements inside selectboxes to match */
     div[data-baseweb="select"] span, 
     div[data-baseweb="select"] div {
+        background-color: #FFFFFF !important;
         color: #1E293B !important;
     }
 
